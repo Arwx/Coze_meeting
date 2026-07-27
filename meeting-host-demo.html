@@ -51,7 +51,7 @@
 
     .topbar {
       display: grid;
-      grid-template-columns: minmax(260px, 1fr) auto;
+      grid-template-columns: minmax(280px, 1fr) minmax(520px, auto);
       gap: 20px;
       align-items: center;
       padding: 20px 22px;
@@ -115,70 +115,41 @@
       border-color: rgba(15, 118, 110, 0.24);
     }
 
-    .actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      justify-content: flex-end;
-    }
-
-    .coze-config {
-      margin-top: 18px;
-      padding: 16px;
-      background: rgba(255, 255, 255, 0.92);
-      border: 1px solid var(--line);
-      border-radius: 18px;
-      box-shadow: 0 12px 34px rgba(17, 24, 39, 0.08);
-    }
-
-    .config-head {
-      display: flex;
-      justify-content: space-between;
-      gap: 12px;
-      align-items: center;
-      margin-bottom: 12px;
-    }
-
-    .config-title {
-      margin: 0;
-      font-size: 15px;
-      font-weight: 600;
-    }
-
-    .config-grid {
+    .meeting-actions {
       display: grid;
-      grid-template-columns: repeat(4, minmax(160px, 1fr));
+      grid-template-columns: minmax(220px, 280px) auto;
       gap: 10px;
+      justify-content: end;
+      align-items: end;
     }
 
-    .field {
+    .action-buttons {
+      display: flex;
+      flex-wrap: nowrap;
+      gap: 10px;
+      align-items: end;
+    }
+
+    .meeting-topic-field {
       display: grid;
       gap: 6px;
-      min-width: 0;
+      width: min(260px, 100%);
     }
 
-    .field label {
+    .meeting-topic-field label {
       color: var(--muted);
       font-size: 12px;
     }
 
-    .field input {
-      min-height: 38px;
+    .meeting-topic-field input {
+      width: 100%;
+      min-height: 40px;
       padding: 8px 10px;
       font-size: 13px;
-    }
-
-    .config-actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      align-items: center;
-      margin-top: 12px;
-    }
-
-    .config-note {
-      color: var(--muted);
-      font-size: 12px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--panel);
+      color: var(--ink);
     }
 
     button {
@@ -221,7 +192,7 @@
     .workspace {
       display: grid;
       grid-template-columns: minmax(0, 3fr) minmax(380px, 2fr);
-      grid-template-rows: clamp(380px, 28vw, 460px) clamp(330px, 24vw, 390px);
+      grid-template-rows: clamp(380px, 28vw, 460px) minmax(420px, 1fr);
       grid-template-areas:
         "video minutes"
         "transcript query";
@@ -265,6 +236,13 @@
       padding: 14px 16px;
       border-bottom: 1px solid var(--line);
       background: linear-gradient(180deg, #ffffff, var(--panel-soft));
+    }
+
+    .panel-head-actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-shrink: 0;
     }
 
     .panel-title {
@@ -497,6 +475,11 @@
       gap: 10px;
     }
 
+    .query-actions {
+      display: flex;
+      justify-content: flex-end;
+    }
+
     textarea,
     input {
       width: 100%;
@@ -510,13 +493,14 @@
     }
 
     textarea {
-      min-height: 78px;
+      min-height: 104px;
       resize: vertical;
       line-height: 1.6;
     }
 
     .answer {
       margin-top: 12px;
+      min-height: 180px;
       padding: 12px;
       border-radius: 12px;
       background: var(--primary-weak);
@@ -542,10 +526,17 @@
     }
 
     .history-card {
+      width: 100%;
       padding: 12px;
       border-radius: 12px;
       border: 1px solid var(--line);
       background: var(--panel-soft);
+      text-align: left;
+      box-shadow: none;
+    }
+
+    .history-card:hover {
+      background: #eef4ff;
     }
 
     .history-card strong {
@@ -557,6 +548,61 @@
     .history-card span {
       color: var(--muted);
       font-size: 13px;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 30;
+      display: none;
+      place-items: center;
+      padding: 24px;
+      background: rgba(17, 24, 39, 0.42);
+    }
+
+    .modal-backdrop.is-open {
+      display: grid;
+    }
+
+    .minutes-dialog {
+      width: min(760px, 100%);
+      max-height: min(760px, 88vh);
+      display: flex;
+      flex-direction: column;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .dialog-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line);
+      background: var(--panel-soft);
+    }
+
+    .dialog-title-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      min-width: 0;
+    }
+
+    .dialog-title {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .dialog-body {
+      padding: 16px;
+      overflow: auto;
     }
 
     @media (max-width: 1080px) {
@@ -592,21 +638,22 @@
         grid-template-columns: 1fr;
       }
 
-      .actions {
+      .meeting-actions {
+        grid-template-columns: 1fr;
         justify-content: flex-start;
+      }
+
+      .action-buttons {
+        flex-wrap: wrap;
+      }
+
+      .meeting-topic-field {
+        flex: 1 1 100%;
+        width: 100%;
       }
 
       button {
         flex: 1 1 150px;
-      }
-
-      .config-head {
-        align-items: flex-start;
-        flex-direction: column;
-      }
-
-      .config-grid {
-        grid-template-columns: 1fr;
       }
 
       .video-placeholder {
@@ -633,58 +680,19 @@
           <span class="badge">角色：会议主持人</span>
           <span id="meetingStatus" class="badge status-idle">状态：未开始</span>
         </div>
-        <h1 id="meetingTitle">产品最小功能验证会议</h1>
+        <h1 id="meetingTitle">会议助手演示</h1>
         <p class="subtitle">会议视频分析、实时转写、结构化纪要与历史纪要查询。</p>
       </div>
-      <div class="actions" aria-label="会议操作">
-        <button id="startBtn" class="primary" type="button">开始会议</button>
-        <button id="minutesBtn" type="button" disabled>生成纪要</button>
-        <button id="saveBtn" type="button" disabled>保存到知识库</button>
-      </div>
-    </section>
-
-    <section class="coze-config" aria-label="Coze 直连配置">
-      <div class="config-head">
-        <h2 class="config-title">运行配置</h2>
-        <span id="cozeStatus" class="badge status-idle">Coze：未配置</span>
-      </div>
-      <div class="config-grid">
-        <div class="field">
-          <label for="cozeBaseUrl">API 地址</label>
-          <input id="cozeBaseUrl" value="https://api.coze.cn" autocomplete="off">
+      <div class="meeting-actions" aria-label="会议操作">
+        <div class="meeting-topic-field">
+          <label for="meetingTopicInput">会议主题</label>
+          <input id="meetingTopicInput" value="会议助手演示" autocomplete="off">
         </div>
-        <div class="field">
-          <label for="cozePat">Personal Access Token</label>
-          <input id="cozePat" type="password" placeholder="来自 config.js" autocomplete="off">
+        <div class="action-buttons">
+          <button id="startBtn" class="primary" type="button">开始会议</button>
+          <button id="minutesBtn" type="button" disabled>生成纪要</button>
+          <button id="saveBtn" type="button" disabled>保存到知识库</button>
         </div>
-        <div class="field">
-          <label for="cozeBotId">Bot ID（可选）</label>
-          <input id="cozeBotId" placeholder="应用工作流可先留空" autocomplete="off">
-        </div>
-        <div class="field">
-          <label for="wfReceiveTranscript">转写清洗工作流 ID</label>
-          <input id="wfReceiveTranscript" placeholder="wf_receive_transcript" autocomplete="off">
-        </div>
-        <div class="field">
-          <label for="wfGenerateMinutes">生成纪要工作流 ID</label>
-          <input id="wfGenerateMinutes" placeholder="wf_generate_minutes" autocomplete="off">
-        </div>
-        <div class="field">
-          <label for="wfSaveMinutes">保存知识库工作流 ID</label>
-          <input id="wfSaveMinutes" placeholder="wf_save_minutes" autocomplete="off">
-        </div>
-        <div class="field">
-          <label for="wfSearchMinutes">历史查询工作流 ID</label>
-          <input id="wfSearchMinutes" placeholder="wf_search_minutes" autocomplete="off">
-        </div>
-        <div class="field">
-          <label for="meetingTitleInput">会议标题</label>
-          <input id="meetingTitleInput" value="产品最小功能验证会议" autocomplete="off">
-        </div>
-      </div>
-      <div class="config-actions">
-        <button id="saveConfigBtn" type="button">应用当前填写值</button>
-        <span class="config-note">默认读取 config.js；密钥会暴露在浏览器，仅适合本地演示。</span>
       </div>
     </section>
 
@@ -738,39 +746,61 @@
             <h2 class="panel-title">历史纪要查询</h2>
             <p class="panel-note">从会议纪要知识库中检索并回答。</p>
           </div>
+          <div class="panel-head-actions">
+            <button id="loadHistoryBtn" type="button">历史纪要</button>
+          </div>
         </div>
         <div class="content">
           <div class="query-box">
             <textarea id="queryInput" aria-label="历史纪要查询问题">这次会议有哪些待办事项？</textarea>
-            <button id="queryBtn" class="primary" type="button">查询历史纪要</button>
+            <div class="query-actions">
+              <button id="queryBtn" class="primary" type="button">查询问题</button>
+            </div>
           </div>
-          <div id="queryAnswer" class="answer">知识库中已有一条示例纪要。保存当前会议后，可查询本次会议内容。</div>
-          <div id="historyList" class="history-list" aria-label="历史纪要列表"></div>
+          <div id="queryAnswer" class="answer"></div>
         </div>
       </section>
     </section>
 
   </main>
 
+  <div id="historyModal" class="modal-backdrop" aria-hidden="true">
+    <section class="minutes-dialog" role="dialog" aria-modal="true" aria-labelledby="historyModalTitle">
+      <div class="dialog-head">
+        <div class="dialog-title-row">
+          <h2 id="historyModalTitle" class="dialog-title">历史会议摘要</h2>
+          <button id="backToHistoryListBtn" type="button" hidden>返回列表</button>
+        </div>
+        <button id="closeHistoryModalBtn" type="button" aria-label="关闭历史会议纪要">关闭</button>
+      </div>
+      <div id="historyModalBody" class="dialog-body">
+        <div id="historyList" class="history-list" aria-label="历史纪要列表"></div>
+      </div>
+    </section>
+  </div>
+
   <script src="config.js"></script>
+  <script src="config.local.js"></script>
   <script type="module">
+    const DEFAULT_MEETING_TITLE = "会议助手演示";
     const WORKFLOW_ENDPOINT = "/v1/workflow/run";
+    const FILE_UPLOAD_ENDPOINT = "/v1/files/upload";
+    const COZE_SDK_VERSION = "1.3.9";
+    const COZE_SDK_CORE_URL = `https://esm.sh/@coze/api@${COZE_SDK_VERSION}`;
+    const COZE_SDK_WS_TOOLS_URL = `https://esm.sh/@coze/api@${COZE_SDK_VERSION}/ws-tools`;
     const DEFAULT_CONFIG = window.MEETING_HOST_CONFIG || {};
 
-    const history = [
-      {
-        title: "2026-07-20 产品评审会纪要",
-        summary: "确认先交付网页端会议工作台，暂缓多角色协作和客户端能力。"
-      }
-    ];
+    const history = [];
 
     let transcript = [];
     let minutesGenerated = false;
     let meetingActive = false;
     let screenStream = null;
-    let micStream = null;
     let speechRecognition = null;
     let browserSpeechActive = false;
+    let cozeTranscriptionClient = null;
+    let liveTranscriptItemId = "";
+    let asrNoTranscriptTimer = null;
     let meetingId = "";
     let meetingStartedAt = 0;
     let currentMinutesMarkdown = "";
@@ -789,17 +819,13 @@
     const queryInput = document.getElementById("queryInput");
     const queryBtn = document.getElementById("queryBtn");
     const queryAnswer = document.getElementById("queryAnswer");
-    const historyList = document.getElementById("historyList");
-    const cozeStatus = document.getElementById("cozeStatus");
-    const cozeBaseUrl = document.getElementById("cozeBaseUrl");
-    const cozePat = document.getElementById("cozePat");
-    const cozeBotId = document.getElementById("cozeBotId");
-    const wfReceiveTranscript = document.getElementById("wfReceiveTranscript");
-    const wfGenerateMinutes = document.getElementById("wfGenerateMinutes");
-    const wfSaveMinutes = document.getElementById("wfSaveMinutes");
-    const wfSearchMinutes = document.getElementById("wfSearchMinutes");
-    const meetingTitleInput = document.getElementById("meetingTitleInput");
-    const saveConfigBtn = document.getElementById("saveConfigBtn");
+    const meetingTopicInput = document.getElementById("meetingTopicInput");
+    const loadHistoryBtn = document.getElementById("loadHistoryBtn");
+    const historyModal = document.getElementById("historyModal");
+    const historyModalTitle = document.getElementById("historyModalTitle");
+    const historyModalBody = document.getElementById("historyModalBody");
+    const backToHistoryListBtn = document.getElementById("backToHistoryListBtn");
+    const closeHistoryModalBtn = document.getElementById("closeHistoryModalBtn");
 
     function escapeHtml(value) {
       return String(value || "")
@@ -820,50 +846,45 @@
       return String(value || "https://api.coze.cn").replace(/\/+$/, "");
     }
 
+    function resolveCozeBaseWsUrl(baseUrl, configuredBaseWsUrl) {
+      if (configuredBaseWsUrl) {
+        return String(configuredBaseWsUrl).replace(/\/+$/, "");
+      }
+      return baseUrl.includes("coze.cn") ? "wss://ws.coze.cn" : "wss://ws.coze.com";
+    }
+
     function getConfig() {
+      const coze = DEFAULT_CONFIG.coze || {};
+      const workflows = coze.workflows || {};
+      const baseUrl = normalizeBaseUrl(coze.baseUrl);
       return {
-        baseUrl: normalizeBaseUrl(cozeBaseUrl.value),
-        pat: cozePat.value.trim(),
-        botId: cozeBotId.value.trim(),
-        receiveTranscriptWorkflowId: wfReceiveTranscript.value.trim(),
-        generateMinutesWorkflowId: wfGenerateMinutes.value.trim(),
-        saveMinutesWorkflowId: wfSaveMinutes.value.trim(),
-        searchMinutesWorkflowId: wfSearchMinutes.value.trim(),
-        meetingTitle: meetingTitleInput.value.trim() || "产品最小功能验证会议"
+        baseUrl,
+        baseWsUrl: resolveCozeBaseWsUrl(baseUrl, coze.baseWsUrl),
+        pat: String(coze.pat || "").trim(),
+        botId: String(coze.botId || "").trim(),
+        receiveTranscriptWorkflowId: String(workflows.receiveTranscript || "").trim(),
+        generateMinutesWorkflowId: String(workflows.generateMinutes || "").trim(),
+        saveMinutesWorkflowId: String(workflows.saveMinutes || "").trim(),
+        searchMinutesWorkflowId: String(workflows.searchMinutes || "").trim(),
+        listMinutesWorkflowId: String(workflows.listMinutes || "").trim(),
+        meetingTitle: meetingTopicInput.value.trim() || DEFAULT_MEETING_TITLE
       };
     }
 
-    function saveConfig() {
+    function syncMeetingTitle() {
       const config = getConfig();
       document.getElementById("meetingTitle").textContent = config.meetingTitle;
-      setCozeStatus();
     }
 
     function loadConfig() {
-      const coze = DEFAULT_CONFIG.coze || {};
-      const workflows = coze.workflows || {};
-      cozeBaseUrl.value = coze.baseUrl || "https://api.coze.cn";
-      cozePat.value = coze.pat || "";
-      cozeBotId.value = coze.botId || "";
-      wfReceiveTranscript.value = workflows.receiveTranscript || "";
-      wfGenerateMinutes.value = workflows.generateMinutes || "";
-      wfSaveMinutes.value = workflows.saveMinutes || "";
-      wfSearchMinutes.value = workflows.searchMinutes || "";
-      meetingTitleInput.value = DEFAULT_CONFIG.app?.meetingTitle || "产品最小功能验证会议";
-      document.getElementById("meetingTitle").textContent = meetingTitleInput.value;
-      setCozeStatus();
-    }
-
-    function setCozeStatus() {
-      const config = getConfig();
-      const ready = Boolean(config.pat && config.generateMinutesWorkflowId && config.saveMinutesWorkflowId && config.searchMinutesWorkflowId);
-      setBadge(cozeStatus, ready ? "Coze：已配置" : "Coze：未配置完整", ready ? "status-live" : "status-idle");
+      meetingTopicInput.value = DEFAULT_CONFIG.app?.meetingTitle || DEFAULT_MEETING_TITLE;
+      syncMeetingTitle();
     }
 
     function renderTranscript() {
       transcriptCount.textContent = transcript.length + " 条";
       if (transcript.length === 0) {
-        transcriptList.innerHTML = '<div class="empty-state">会议开始后，麦克风转写内容将自动显示。</div>';
+        transcriptList.innerHTML = '<div class="empty-state">会议开始后，实时转写内容将自动显示。</div>';
         return;
       }
 
@@ -871,7 +892,7 @@
         <article class="transcript-item">
           <span class="time">${escapeHtml(item.time)}</span>
           <div>
-            <p class="speaker">${escapeHtml(item.speaker)}</p>
+            <p class="speaker">${escapeHtml(item.pending ? `${item.speaker}（转写中）` : item.speaker)}</p>
             <p class="text">${escapeHtml(item.text)}</p>
           </div>
         </article>
@@ -879,13 +900,67 @@
       transcriptList.scrollTop = transcriptList.scrollHeight;
     }
 
+    function setAsrStatus(message) {
+      if (transcript.length > 0) {
+        return;
+      }
+      transcriptList.innerHTML = `<div class="empty-state">${escapeHtml(message)}</div>`;
+    }
+
+    function clearAsrNoTranscriptHint() {
+      if (asrNoTranscriptTimer) {
+        clearTimeout(asrNoTranscriptTimer);
+        asrNoTranscriptTimer = null;
+      }
+    }
+
+    function scheduleAsrNoTranscriptHint() {
+      clearAsrNoTranscriptHint();
+      asrNoTranscriptTimer = setTimeout(() => {
+        if (!meetingActive || transcript.length > 0) {
+          return;
+        }
+        setAsrStatus("Coze ASR 已启动，但暂时没有收到转写文本。请确认浏览器麦克风权限已允许、系统输入设备选对，并靠近麦克风说话。");
+      }, 15000);
+    }
+
+    function markAsrReceivedText() {
+      clearAsrNoTranscriptHint();
+    }
+
     function renderHistory() {
-      historyList.innerHTML = history.map((item) => `
-        <article class="history-card">
+      historyModalTitle.textContent = "历史会议摘要";
+      backToHistoryListBtn.hidden = true;
+      if (history.length === 0) {
+        historyModalBody.innerHTML = '<div id="historyList" class="history-list" aria-label="历史纪要列表"></div>';
+        return;
+      }
+      historyModalBody.innerHTML = `
+        <div id="historyList" class="history-list" aria-label="历史纪要列表">
+          ${history.map((item) => `
+        <button class="history-card" type="button" data-history-id="${escapeHtml(item.id)}">
           <strong>${escapeHtml(item.title)}</strong>
           <span>${escapeHtml(item.summary)}</span>
-        </article>
-      `).join("");
+        </button>
+      `).join("")}
+        </div>
+      `;
+    }
+
+    function showHistoryList() {
+      renderHistory();
+    }
+
+    function openHistoryListModal() {
+      historyModalTitle.textContent = "历史会议摘要";
+      backToHistoryListBtn.hidden = true;
+      if (history.length === 0) {
+        historyModalBody.innerHTML = '<div id="historyList" class="history-list" aria-label="历史纪要列表"></div>';
+      } else {
+        renderHistory();
+      }
+      historyModal.classList.add("is-open");
+      historyModal.setAttribute("aria-hidden", "false");
     }
 
     function renderMarkdown(markdown) {
@@ -937,6 +1012,88 @@
       return JSON.stringify(data, null, 2);
     }
 
+    function pickFirstString(data, keys, fallback = "") {
+      if (!data || typeof data !== "object") {
+        return fallback;
+      }
+      for (const key of keys) {
+        if (typeof data[key] === "string" && data[key].trim()) {
+          return data[key].trim();
+        }
+      }
+      return fallback;
+    }
+
+    function pickHistoryArray(value) {
+      const data = parseMaybeJson(value);
+      if (Array.isArray(data)) {
+        return data;
+      }
+      if (!data || typeof data !== "object") {
+        return [];
+      }
+      for (const key of ["items", "list", "records", "histories", "minutes", "documents", "data", "output", "result"]) {
+        const nested = parseMaybeJson(data[key]);
+        if (Array.isArray(nested)) {
+          return nested;
+        }
+        if (nested && typeof nested === "object" && nested !== data) {
+          const nestedItems = pickHistoryArray(nested);
+          if (nestedItems.length) {
+            return nestedItems;
+          }
+        }
+      }
+      if (pickFirstString(data, ["title", "meeting_title", "meetingTitle", "name", "document_name"]) || pickFirstString(data, ["minutes_md", "minutes", "content", "markdown", "detail", "text"])) {
+        return [data];
+      }
+      return [];
+    }
+
+    function normalizeHistoryItem(item, index) {
+      const parsed = parseMaybeJson(item);
+      if (typeof parsed === "string") {
+        return {
+          id: `history_${index}_${Date.now()}`,
+          title: "未命名会议纪要",
+          summary: parsed.slice(0, 90),
+          minutes: parsed
+        };
+      }
+
+      const title = pickFirstString(parsed, ["title"]) || "未命名会议纪要";
+      const minutes = pickFirstString(parsed, ["minutes_md", "minutes", "content", "markdown", "detail", "text", "raw_text", "output"]);
+      const summary = pickFirstString(parsed, ["summary", "abstract", "description", "snippet"], minutes ? minutes.slice(0, 90) : "点击查看会议纪要内容。");
+      return {
+        id: pickFirstString(parsed, ["id", "document_id", "knowledge_document_id"], `history_${index}_${Date.now()}`),
+        title,
+        summary,
+        minutes: minutes || summary
+      };
+    }
+
+    function normalizeHistoryItems(result) {
+      return pickHistoryArray(result).map(normalizeHistoryItem);
+    }
+
+    function openHistoryMinutes(item) {
+      if (!item) {
+        return;
+      }
+      historyModalTitle.textContent = item.title;
+      backToHistoryListBtn.hidden = false;
+      historyModalBody.innerHTML = `
+        ${renderMarkdown(item.minutes || item.summary || "暂无纪要内容。")}
+      `;
+      historyModal.classList.add("is-open");
+      historyModal.setAttribute("aria-hidden", "false");
+    }
+
+    function closeHistoryMinutes() {
+      historyModal.classList.remove("is-open");
+      historyModal.setAttribute("aria-hidden", "true");
+    }
+
     async function callWorkflow(workflowId, parameters) {
       const config = getConfig();
       if (!config.pat) {
@@ -970,6 +1127,78 @@
       return unwrapWorkflowData(payload);
     }
 
+    function sanitizeFileNameSegment(value) {
+      return String(value || "meeting")
+        .trim()
+        .replace(/[\\/:*?"<>|]/g, "_")
+        .replace(/\s+/g, "_")
+        .slice(0, 60) || "meeting";
+    }
+
+    function buildMeetingMinutesText(config, createdTime) {
+      return [
+        `会议ID：${meetingId}`,
+        `会议标题：${config.meetingTitle}`,
+        `创建时间：${createdTime}`,
+        "",
+        currentMinutesMarkdown
+      ].join("\n");
+    }
+
+    function buildMeetingMinutesFileName(config, createdTime) {
+      const datePart = createdTime.slice(0, 10);
+      return `${datePart}_${sanitizeFileNameSegment(config.meetingTitle)}_会议纪要.txt`;
+    }
+
+    function extractUploadedFileId(payload) {
+      const data = payload?.data || payload;
+      return pickFirstString(data, ["id", "file_id", "fileId"]);
+    }
+
+    async function uploadCozeTextFile(fileName, text) {
+      const config = getConfig();
+      if (!config.pat) {
+        throw new Error("请先填写 Coze Personal Access Token。");
+      }
+
+      const fileBlob = new Blob([text], { type: "text/plain;charset=utf-8" });
+      const formData = new FormData();
+      formData.append("file", fileBlob, fileName);
+
+      const response = await fetch(`${config.baseUrl}${FILE_UPLOAD_ENDPOINT}`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${config.pat}`
+        },
+        body: formData
+      });
+
+      if (!response.ok) {
+        throw new Error(`Coze 文件上传失败：HTTP ${response.status}`);
+      }
+
+      const payload = await response.json();
+      if (payload.code !== 0 && payload.code !== "0") {
+        throw new Error(payload.msg || "Coze 文件上传失败。");
+      }
+
+      const fileId = extractUploadedFileId(payload);
+      if (!fileId) {
+        throw new Error("Coze 文件上传成功，但未返回 file_id。");
+      }
+      return fileId;
+    }
+
+    function buildSaveMinutesWorkflowParameters(config, createdTime, knowledgeFileId, meetingText) {
+      return {
+        meeting_id: meetingId,
+        meeting_title: config.meetingTitle,
+        created_time: createdTime,
+        knowledge: JSON.stringify({ file_id: knowledgeFileId }),
+        meeting_text: meetingText
+      };
+    }
+
     async function cleanTranscriptChunk(rawText) {
       const config = getConfig();
       if (!config.receiveTranscriptWorkflowId) {
@@ -984,19 +1213,7 @@
       return pickWorkflowText(result, ["clean_chunk", "text", "output"]) || rawText;
     }
 
-    async function appendTranscriptChunk(rawText) {
-      const text = rawText.trim();
-      if (!text) {
-        return;
-      }
-
-      const cleanText = await cleanTranscriptChunk(text);
-      transcript.push({
-        time: formatClock(Date.now() - meetingStartedAt),
-        speaker: "会议主持人",
-        text: cleanText
-      });
-      renderTranscript();
+    function markTranscriptChanged() {
       minutesState.textContent = "待更新";
       minutesGenerated = false;
       currentMinutesMarkdown = "";
@@ -1005,19 +1222,198 @@
       minutesBtn.disabled = false;
     }
 
+    async function appendTranscriptChunk(rawText) {
+      const text = rawText.trim();
+      if (!text) {
+        return;
+      }
+
+      markAsrReceivedText();
+      const cleanText = await cleanTranscriptChunk(text);
+      transcript.push({
+        time: formatClock(Date.now() - meetingStartedAt),
+        speaker: "会议主持人",
+        text: cleanText
+      });
+      renderTranscript();
+      markTranscriptChanged();
+    }
+
+    function upsertLiveTranscriptChunk(rawText) {
+      const text = rawText.trim();
+      if (!text) {
+        return;
+      }
+
+      markAsrReceivedText();
+      let liveItem = transcript.find((item) => item.id === liveTranscriptItemId);
+      if (!liveItem) {
+        liveTranscriptItemId = `live_${Date.now()}`;
+        liveItem = {
+          id: liveTranscriptItemId,
+          time: formatClock(Date.now() - meetingStartedAt),
+          speaker: "会议主持人",
+          text,
+          pending: true
+        };
+        transcript.push(liveItem);
+      } else {
+        liveItem.text = text;
+        liveItem.pending = true;
+      }
+      renderTranscript();
+      markTranscriptChanged();
+    }
+
+    async function finalizeLiveTranscriptChunk(rawText) {
+      const text = rawText.trim();
+      if (!text) {
+        return;
+      }
+
+      markAsrReceivedText();
+      const liveItem = transcript.find((item) => item.id === liveTranscriptItemId);
+      if (!liveItem) {
+        await appendTranscriptChunk(text);
+        return;
+      }
+
+      liveTranscriptItemId = "";
+      liveItem.text = await cleanTranscriptChunk(text);
+      liveItem.pending = false;
+      renderTranscript();
+      markTranscriptChanged();
+    }
+
+    async function loadCozeTranscriptionSdk() {
+      const [coreModule, wsToolsModule] = await Promise.all([
+        import(COZE_SDK_CORE_URL),
+        import(COZE_SDK_WS_TOOLS_URL)
+      ]);
+      return {
+        WebsocketsEventType: coreModule.WebsocketsEventType,
+        WsTranscriptionClient: wsToolsModule.WsTranscriptionClient
+      };
+    }
+
+    function getEventContent(event) {
+      return String(event?.data?.content || "").trim();
+    }
+
+    async function startCozeAsr() {
+      const config = getConfig();
+      if (!config.pat) {
+        throw new Error("请先在 config.js 填写 Coze Personal Access Token。");
+      }
+
+      setAsrStatus("正在加载 Coze 实时转写 SDK...");
+      const { WebsocketsEventType, WsTranscriptionClient } = await loadCozeTranscriptionSdk();
+      if (!WsTranscriptionClient) {
+        throw new Error("Coze 转写 SDK 加载失败。");
+      }
+
+      const client = new WsTranscriptionClient({
+        token: config.pat,
+        baseWsURL: config.baseWsUrl,
+        allowPersonalAccessTokenInBrowser: true,
+        debug: false,
+        audioCaptureConfig: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true
+        }
+      });
+
+      const handleError = (event) => {
+        if (!meetingActive) {
+          return;
+        }
+        const message = event?.data?.msg || event?.message || "实时转写中断";
+        clearAsrNoTranscriptHint();
+        setAsrStatus(`Coze ASR 提示：${message}`);
+      };
+
+      client.on(WebsocketsEventType.ALL, (event) => {
+        if (event?.event_type && event.event_type !== WebsocketsEventType.TRANSCRIPTIONS_MESSAGE_UPDATE) {
+          console.debug("[transcription] event", event.event_type, event);
+        }
+      });
+      client.on(WebsocketsEventType.ERROR, handleError);
+      client.on(WebsocketsEventType.CLIENT_ERROR, handleError);
+      client.on(WebsocketsEventType.TRANSCRIPTIONS_CREATED, () => {
+        if (meetingActive) {
+          setAsrStatus("Coze ASR 已连接，正在监听麦克风。");
+        }
+      });
+      client.on(WebsocketsEventType.TRANSCRIPTIONS_UPDATED, () => {
+        if (meetingActive) {
+          setAsrStatus("Coze ASR 配置已更新，正在等待语音。");
+        }
+      });
+      client.on(WebsocketsEventType.INPUT_AUDIO_BUFFER_SPEECH_STARTED, () => {
+        if (meetingActive) {
+          setAsrStatus("检测到语音，正在识别...");
+        }
+      });
+      client.on(WebsocketsEventType.INPUT_AUDIO_BUFFER_SPEECH_STOPPED, () => {
+        if (meetingActive) {
+          setAsrStatus("语音段结束，正在等待转写结果...");
+        }
+      });
+      client.on(WebsocketsEventType.TRANSCRIPTIONS_MESSAGE_UPDATE, (event) => {
+        const text = getEventContent(event);
+        if (text && meetingActive) {
+          upsertLiveTranscriptChunk(text);
+        }
+      });
+      client.on(WebsocketsEventType.TRANSCRIPTIONS_MESSAGE_COMPLETED, async (event) => {
+        const text = getEventContent(event);
+        if (text && meetingActive) {
+          await finalizeLiveTranscriptChunk(text);
+        }
+      });
+
+      await client.start();
+      cozeTranscriptionClient = client;
+      setAsrStatus("Coze ASR 已启动，正在等待语音。");
+      scheduleAsrNoTranscriptHint();
+    }
+
+    function stopCozeAsr() {
+      clearAsrNoTranscriptHint();
+      const client = cozeTranscriptionClient;
+      cozeTranscriptionClient = null;
+      if (!client) {
+        return;
+      }
+      try {
+        client.stop();
+      } catch (error) {
+        // Stop can throw if the SDK has already closed the recorder.
+      }
+      try {
+        client.destroy();
+      } catch (error) {
+        // Destroy is best-effort cleanup.
+      }
+    }
+
     function startBrowserSpeechRecognition() {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SpeechRecognition) {
         return false;
       }
 
-      speechRecognition = new SpeechRecognition();
-      speechRecognition.lang = "zh-CN";
-      speechRecognition.continuous = true;
-      speechRecognition.interimResults = false;
-      speechRecognition.maxAlternatives = 1;
+      const recognition = new SpeechRecognition();
+      let browserSpeechShouldRestart = true;
+      let browserSpeechFatal = false;
+      speechRecognition = recognition;
+      recognition.lang = "zh-CN";
+      recognition.continuous = true;
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
 
-      speechRecognition.addEventListener("result", async (event) => {
+      recognition.addEventListener("result", async (event) => {
         let finalText = "";
         for (let index = event.resultIndex; index < event.results.length; index += 1) {
           const result = event.results[index];
@@ -1030,16 +1426,20 @@
         }
       });
 
-      speechRecognition.addEventListener("error", (event) => {
+      recognition.addEventListener("error", (event) => {
+        if (event.error === "not-allowed" || event.error === "service-not-allowed") {
+          browserSpeechFatal = true;
+          browserSpeechShouldRestart = false;
+        }
         if (meetingActive) {
-          queryAnswer.textContent = `浏览器语音识别提示：${event.error || "识别中断"}。`;
+          setAsrStatus(`浏览器语音识别提示：${event.error || "识别中断"}。`);
         }
       });
 
-      speechRecognition.addEventListener("end", () => {
-        if (meetingActive && speechRecognition) {
+      recognition.addEventListener("end", () => {
+        if (meetingActive && speechRecognition === recognition && browserSpeechShouldRestart && !browserSpeechFatal) {
           try {
-            speechRecognition.start();
+            recognition.start();
           } catch (error) {
             // Some browsers throw if start is called too quickly after end.
           }
@@ -1047,7 +1447,7 @@
       });
 
       try {
-        speechRecognition.start();
+        recognition.start();
         browserSpeechActive = true;
         return true;
       } catch (error) {
@@ -1072,29 +1472,23 @@
       }
     }
 
-    async function startBrowserAsr() {
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        throw new Error("当前浏览器不支持麦克风采集。");
-      }
-      micStream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          channelCount: 1,
-          echoCancellation: true,
-          noiseSuppression: true
+    async function startRealtimeAsr() {
+      try {
+        await startCozeAsr();
+        return;
+      } catch (error) {
+        const browserAsrStarted = startBrowserSpeechRecognition();
+        if (browserAsrStarted) {
+          setAsrStatus(`Coze ASR 启动失败：${error.message}。已切换到浏览器语音识别。`);
+          return;
         }
-      });
-      const browserAsrStarted = startBrowserSpeechRecognition();
-      queryAnswer.textContent = browserAsrStarted
-        ? "麦克风已接入。浏览器语音识别会把文本追加到转写区。"
-        : "麦克风已接入，但当前浏览器不支持 Web Speech API 语音识别。";
+        throw new Error(`Coze ASR 启动失败：${error.message}；当前浏览器也不支持 Web Speech API。`);
+      }
     }
 
-    async function stopBrowserAsr() {
+    async function stopRealtimeAsr() {
+      stopCozeAsr();
       stopBrowserSpeechRecognition();
-      if (micStream) {
-        micStream.getTracks().forEach((track) => track.stop());
-      }
-      micStream = null;
     }
 
     async function generateMinutes() {
@@ -1132,27 +1526,56 @@
 
       const config = getConfig();
       saveBtn.disabled = true;
-      saveBtn.textContent = "保存中";
+      saveBtn.textContent = "生成TXT";
       try {
-        const result = await callWorkflow(config.saveMinutesWorkflowId, {
-          meeting_id: meetingId,
-          meeting_title: config.meetingTitle,
-          knowledge: currentMinutesMarkdown,
-          created_at: new Date().toISOString()
-        });
+        const createdTime = new Date().toISOString();
+        const meetingText = buildMeetingMinutesText(config, createdTime);
+        const fileName = buildMeetingMinutesFileName(config, createdTime);
+        saveBtn.textContent = "上传TXT";
+        const knowledgeFileId = await uploadCozeTextFile(fileName, meetingText);
+        saveBtn.textContent = "保存中";
+        const result = await callWorkflow(
+          config.saveMinutesWorkflowId,
+          buildSaveMinutesWorkflowParameters(config, createdTime, knowledgeFileId, meetingText)
+        );
         const documentId = pickWorkflowText(result, ["documentId", "knowledge_document_id", "document_id", "output"]);
         const fileUrl = pickWorkflowText(result, ["fileUrl", "file_url"]);
         history.unshift({
+          id: documentId || `saved_${Date.now()}`,
           title: `${new Date().toLocaleDateString("zh-CN")} ${config.meetingTitle}纪要`,
-          summary: documentId ? `已写入 Coze 知识库：${documentId}${fileUrl ? `，${fileUrl}` : ""}` : "已写入 Coze 知识库。"
+          summary: documentId ? `已写入 Coze 知识库：${documentId}${fileUrl ? `，${fileUrl}` : ""}` : "已写入 Coze 知识库。",
+          minutes: currentMinutesMarkdown
         });
         saveBtn.textContent = "已保存";
-        queryAnswer.textContent = "会议主持人已将当前纪要保存到 Coze 会议纪要知识库。";
         renderHistory();
       } catch (error) {
         saveBtn.disabled = false;
         saveBtn.textContent = "保存到知识库";
-        queryAnswer.textContent = `保存失败：${error.message}`;
+        historyModalBody.innerHTML = `<div class="empty-state">保存失败：${escapeHtml(error.message)}</div>`;
+      }
+    }
+
+    async function loadHistoryList() {
+      const config = getConfig();
+      openHistoryListModal();
+      loadHistoryBtn.disabled = true;
+      loadHistoryBtn.textContent = "加载中";
+      historyModalBody.innerHTML = '<div class="empty-state">历史纪要加载中。</div>';
+      try {
+        const result = await callWorkflow(config.listMinutesWorkflowId, {
+          meeting_title: config.meetingTitle,
+          limit: 20
+        });
+        history.splice(0, history.length, ...normalizeHistoryItems(result));
+        renderHistory();
+        if (history.length === 0) {
+          historyModalBody.innerHTML = '<div class="empty-state">暂无历史会议纪要。</div>';
+        }
+      } catch (error) {
+        historyModalBody.innerHTML = `<div class="empty-state">历史纪要加载失败：${escapeHtml(error.message)}</div>`;
+      } finally {
+        loadHistoryBtn.disabled = false;
+        loadHistoryBtn.textContent = "历史纪要";
       }
     }
 
@@ -1176,7 +1599,7 @@
         queryAnswer.textContent = `查询失败：${error.message}`;
       } finally {
         queryBtn.disabled = false;
-        queryBtn.textContent = "查询历史纪要";
+        queryBtn.textContent = "查询问题";
       }
     }
 
@@ -1221,10 +1644,11 @@
     }
 
     async function startMeeting() {
-      saveConfig();
+      syncMeetingTitle();
       meetingId = `mtg_${Date.now()}`;
       meetingStartedAt = Date.now();
       transcript = [];
+      liveTranscriptItemId = "";
       currentMinutesMarkdown = "";
       minutesGenerated = false;
       renderTranscript();
@@ -1235,23 +1659,24 @@
 
       meetingActive = true;
       setBadge(meetingStatus, "状态：记录中", "status-live");
-      videoState.textContent = "视频状态：请求屏幕共享中";
+      videoState.textContent = "视频状态：等待实时转写启动";
       startBtn.textContent = "停止会议";
 
-      await startScreenShare();
       try {
-        await startBrowserAsr();
+        await startRealtimeAsr();
+        videoState.textContent = "视频状态：请求屏幕共享中";
+        await startScreenShare();
       } catch (error) {
         meetingActive = false;
         setBadge(meetingStatus, "状态：ASR 未启动", "status-idle");
         startBtn.textContent = "开始会议";
-        queryAnswer.textContent = `麦克风转写启动失败：${error.message}`;
+        transcriptList.innerHTML = `<div class="empty-state">麦克风转写启动失败：${escapeHtml(error.message)}</div>`;
       }
     }
 
     async function stopMeeting() {
       meetingActive = false;
-      await stopBrowserAsr();
+      await stopRealtimeAsr();
       clearScreenShare("视频状态：会议已停止");
       setBadge(meetingStatus, "状态：已结束", "status-idle");
       startBtn.textContent = "重新开始会议";
@@ -1269,9 +1694,22 @@
     minutesBtn.addEventListener("click", generateMinutes);
     saveBtn.addEventListener("click", saveCurrentMinutes);
     queryBtn.addEventListener("click", queryHistory);
-    saveConfigBtn.addEventListener("click", saveConfig);
-    [cozeBaseUrl, cozePat, cozeBotId, wfReceiveTranscript, wfGenerateMinutes, wfSaveMinutes, wfSearchMinutes, meetingTitleInput]
-      .forEach((input) => input.addEventListener("input", setCozeStatus));
+    loadHistoryBtn.addEventListener("click", loadHistoryList);
+    historyModalBody.addEventListener("click", (event) => {
+      const card = event.target.closest(".history-card");
+      if (!card) {
+        return;
+      }
+      openHistoryMinutes(history.find((item) => item.id === card.dataset.historyId));
+    });
+    backToHistoryListBtn.addEventListener("click", showHistoryList);
+    closeHistoryModalBtn.addEventListener("click", closeHistoryMinutes);
+    historyModal.addEventListener("click", (event) => {
+      if (event.target === historyModal) {
+        closeHistoryMinutes();
+      }
+    });
+    meetingTopicInput.addEventListener("input", syncMeetingTitle);
 
     loadConfig();
     renderTranscript();

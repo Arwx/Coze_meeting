@@ -4,13 +4,14 @@ window.MEETING_HOST_CONFIG = {
     pat: "pat_xxx",
     botId: "",
     workflows: {
-      generateMinutes: "workflow_id_for_wf_generate_minutes",
-      saveMinutes: "workflow_id_for_wf_save_minutes",
-      searchMinutes: "workflow_id_for_wf_search_minutes",
+      generateMinutes: "7667176364076564506",
+      saveMinutes: "7667177298881839158",
+      searchMinutes: "7667178346640883722",
+      listMinutes: "7667206967505616938",
       receiveTranscript: ""
     }
   },
   app: {
-    meetingTitle: "产品最小功能验证会议"
+    meetingTitle: "会议助手演示"
   }
 };
