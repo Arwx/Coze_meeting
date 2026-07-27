@@ -1,0 +1,952 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>会议主持人工作台</title>
+</head>
+<body>
+<div id="meeting-host-app">
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #eef3f8;
+      --panel: #ffffff;
+      --panel-soft: #f6f8fb;
+      --ink: #111827;
+      --muted: #5f6c80;
+      --line: #d8e1ec;
+      --primary: #1f5eff;
+      --primary-weak: #e8efff;
+      --accent: #0a7f73;
+      --accent-weak: #e5f5f2;
+      --warn: #b45309;
+      --warn-weak: #fff3dc;
+      --shadow: 0 24px 70px rgba(17, 24, 39, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at top left, rgba(31, 94, 255, 0.14), transparent 34%),
+        linear-gradient(180deg, rgba(10, 127, 115, 0.07), transparent 46%),
+        var(--bg);
+      color: var(--ink);
+      font-family: "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
+    }
+
+    #meeting-host-app {
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    .shell {
+      max-width: 1440px;
+      margin: 0 auto;
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: minmax(260px, 1fr) auto;
+      gap: 20px;
+      align-items: center;
+      padding: 20px 22px;
+      background: rgba(255, 255, 255, 0.92);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(12px);
+    }
+
+    .title-group {
+      min-width: 0;
+    }
+
+    .eyebrow {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 8px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 26px;
+      font-weight: 600;
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      margin: 8px 0 0;
+      color: #4b5b73;
+      font-size: 14px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 28px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: var(--panel-soft);
+      border: 1px solid var(--line);
+      color: var(--ink);
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .badge.status-idle {
+      background: var(--warn-weak);
+      color: var(--warn);
+      border-color: rgba(180, 83, 9, 0.22);
+    }
+
+    .badge.status-live {
+      background: var(--accent-weak);
+      color: var(--accent);
+      border-color: rgba(15, 118, 110, 0.24);
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+
+    button {
+      min-height: 40px;
+      padding: 10px 15px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--panel);
+      color: var(--ink);
+      cursor: pointer;
+      font: inherit;
+      font-size: 14px;
+      transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      border-color: rgba(37, 99, 235, 0.38);
+      background: var(--primary-weak);
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.52;
+      transform: none;
+    }
+
+    .primary {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #fff;
+      box-shadow: 0 12px 24px rgba(31, 94, 255, 0.22);
+    }
+
+    .primary:hover {
+      background: #1d4ed8;
+      color: #fff;
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(0, 3fr) minmax(380px, 2fr);
+      grid-template-rows: clamp(380px, 28vw, 460px) clamp(330px, 24vw, 390px);
+      grid-template-areas:
+        "video minutes"
+        "transcript query";
+      gap: 18px;
+      margin-top: 18px;
+      align-items: stretch;
+    }
+
+    .video-panel {
+      grid-area: video;
+    }
+
+    .minutes-panel {
+      grid-area: minutes;
+    }
+
+    .transcript-panel {
+      grid-area: transcript;
+    }
+
+    .query-panel {
+      grid-area: query;
+    }
+
+    .panel {
+      min-height: 0;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      box-shadow: 0 16px 42px rgba(17, 24, 39, 0.08);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .panel-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(180deg, #ffffff, var(--panel-soft));
+    }
+
+    .panel-title {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .panel-note {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .video-placeholder {
+      position: relative;
+      height: 100%;
+      min-height: 0;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      background:
+        linear-gradient(135deg, rgba(31, 94, 255, 0.2), rgba(10, 127, 115, 0.12)),
+        #0d1b31;
+      color: #eef4ff;
+    }
+
+    .screen-video {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: #050b14;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+
+    .video-placeholder.is-live .screen-video {
+      opacity: 1;
+    }
+
+    .video-placeholder.is-live .video-inner {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .video-placeholder.is-live::before {
+      display: none;
+    }
+
+    .video-placeholder::before {
+      content: "";
+      position: absolute;
+      inset: 18px;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 16px;
+      pointer-events: none;
+    }
+
+    .video-inner {
+      position: relative;
+      width: min(520px, 100%);
+      text-align: center;
+      transition: opacity 0.2s ease;
+    }
+
+    .play-mark {
+      width: 72px;
+      height: 72px;
+      margin: 0 auto 18px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: rgba(255, 255, 255, 0.13);
+      border: 1px solid rgba(255, 255, 255, 0.26);
+      font-size: 28px;
+    }
+
+    .video-title {
+      margin: 0;
+      font-size: 24px;
+      font-weight: 600;
+    }
+
+    .video-copy {
+      margin: 10px 0 0;
+      color: rgba(238, 244, 255, 0.78);
+      font-size: 14px;
+    }
+
+    .video-meta {
+      position: absolute;
+      left: 18px;
+      right: 18px;
+      bottom: 18px;
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      color: rgba(238, 244, 255, 0.8);
+      font-size: 13px;
+    }
+
+    .content {
+      min-height: 0;
+      padding: 16px;
+    }
+
+    .minutes-panel .content,
+    .transcript-panel .content,
+    .query-panel .content {
+      flex: 1;
+      overflow: auto;
+      scrollbar-gutter: stable;
+    }
+
+    .minutes-panel .content::-webkit-scrollbar,
+    .transcript-panel .content::-webkit-scrollbar,
+    .query-panel .content::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .minutes-panel .content::-webkit-scrollbar-thumb,
+    .transcript-panel .content::-webkit-scrollbar-thumb,
+    .query-panel .content::-webkit-scrollbar-thumb {
+      background: #c6d1df;
+      border-radius: 999px;
+    }
+
+    .transcript-list {
+      display: grid;
+      gap: 10px;
+      padding-right: 4px;
+    }
+
+    .transcript-item {
+      display: grid;
+      grid-template-columns: 72px minmax(0, 1fr);
+      gap: 10px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--panel-soft);
+    }
+
+    .time {
+      color: var(--muted);
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .speaker {
+      margin: 0 0 4px;
+      color: var(--accent);
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .text {
+      margin: 0;
+      font-size: 14px;
+      line-height: 1.72;
+    }
+
+    .empty-state {
+      padding: 26px;
+      color: var(--muted);
+      text-align: center;
+      border: 1px dashed var(--line);
+      border-radius: 12px;
+      background: var(--panel-soft);
+    }
+
+    .minutes {
+      display: grid;
+      gap: 14px;
+    }
+
+    .minutes-section {
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .minutes-section:last-child {
+      padding-bottom: 0;
+      border-bottom: 0;
+    }
+
+    .section-label {
+      margin: 0 0 8px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .minutes-section p,
+    .minutes-section ul {
+      margin: 0;
+      font-size: 14px;
+      line-height: 1.72;
+    }
+
+    ul {
+      padding-left: 20px;
+    }
+
+    .task-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    .task-table th,
+    .task-table td {
+      padding: 9px 8px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .task-table th {
+      color: var(--muted);
+      font-weight: 600;
+      background: var(--panel-soft);
+    }
+
+    .query-box {
+      display: grid;
+      gap: 10px;
+    }
+
+    textarea,
+    input {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px 12px;
+      color: var(--ink);
+      background: var(--panel);
+      font: inherit;
+      font-size: 14px;
+    }
+
+    textarea {
+      min-height: 78px;
+      resize: vertical;
+      line-height: 1.6;
+    }
+
+    .answer {
+      margin-top: 12px;
+      padding: 12px;
+      border-radius: 12px;
+      background: var(--primary-weak);
+      border: 1px solid rgba(37, 99, 235, 0.18);
+      font-size: 14px;
+      line-height: 1.72;
+    }
+
+    .history-list {
+      display: grid;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .history-card {
+      padding: 12px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: var(--panel-soft);
+    }
+
+    .history-card strong {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 600;
+    }
+
+    .history-card span {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    @media (max-width: 1080px) {
+      .workspace {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto;
+        grid-template-areas:
+          "video"
+          "minutes"
+          "transcript"
+          "query";
+      }
+
+      .video-placeholder {
+        aspect-ratio: 16 / 9;
+        height: auto;
+        min-height: 280px;
+      }
+
+      .minutes-panel .content,
+      .transcript-panel .content,
+      .query-panel .content {
+        overflow: visible;
+      }
+    }
+
+    @media (max-width: 720px) {
+      #meeting-host-app {
+        padding: 14px;
+      }
+
+      .topbar {
+        grid-template-columns: 1fr;
+      }
+
+      .actions {
+        justify-content: flex-start;
+      }
+
+      button {
+        flex: 1 1 150px;
+      }
+
+      .video-placeholder {
+        min-height: 210px;
+      }
+
+      .video-meta {
+        position: static;
+        margin-top: 20px;
+        flex-wrap: wrap;
+      }
+
+      .transcript-item {
+        grid-template-columns: 1fr;
+      }
+
+    }
+  </style>
+
+  <main class="shell" aria-label="会议主持人工作台">
+    <section class="topbar">
+      <div class="title-group">
+        <div class="eyebrow">
+          <span class="badge">角色：会议主持人</span>
+          <span id="meetingStatus" class="badge status-idle">状态：未开始</span>
+        </div>
+        <h1 id="meetingTitle">产品最小功能验证会议</h1>
+        <p class="subtitle">会议视频分析、实时转写、结构化纪要与历史纪要查询。</p>
+      </div>
+      <div class="actions" aria-label="会议操作">
+        <button id="startBtn" class="primary" type="button">开始会议</button>
+        <button id="minutesBtn" type="button" disabled>生成纪要</button>
+        <button id="saveBtn" type="button" disabled>保存到知识库</button>
+      </div>
+    </section>
+
+    <section class="workspace">
+      <section class="panel video-panel" aria-label="会议视频区">
+        <div id="videoSurface" class="video-placeholder">
+          <video id="screenVideo" class="screen-video" autoplay muted playsinline></video>
+          <div class="video-inner">
+            <div class="play-mark" aria-hidden="true">▷</div>
+            <h2 class="video-title">会议视频</h2>
+            <p class="video-copy">点击“开始会议”后选择本地屏幕或窗口</p>
+          </div>
+          <div class="video-meta">
+            <span id="videoState">视频状态：待接入</span>
+            <span>16:9</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel minutes-panel" aria-label="结构化会议纪要区">
+        <div class="panel-head">
+          <div>
+            <h2 class="panel-title">结构化会议纪要</h2>
+            <p class="panel-note">由会议主持人根据实时转写整理。</p>
+          </div>
+          <span id="minutesState" class="badge">未生成</span>
+        </div>
+        <div class="content">
+          <div id="minutesContent" class="empty-state">生成纪要后，这里会展示摘要、结论、待办和风险。</div>
+        </div>
+      </section>
+
+      <section class="panel transcript-panel" aria-label="实时转写区">
+        <div class="panel-head">
+          <div>
+            <h2 class="panel-title">实时转写</h2>
+            <p class="panel-note">会议视频音频识别结果。</p>
+          </div>
+          <span id="transcriptCount" class="badge">0 条</span>
+        </div>
+        <div class="content">
+          <div id="transcriptList" class="transcript-list">
+            <div class="empty-state">会议开始后，转写内容将自动显示。</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel query-panel" aria-label="历史纪要知识库查询区">
+        <div class="panel-head">
+          <div>
+            <h2 class="panel-title">历史纪要查询</h2>
+            <p class="panel-note">从会议纪要知识库中检索并回答。</p>
+          </div>
+        </div>
+        <div class="content">
+          <div class="query-box">
+            <textarea id="queryInput" aria-label="历史纪要查询问题">这次会议有哪些待办事项？</textarea>
+            <button id="queryBtn" class="primary" type="button">查询历史纪要</button>
+          </div>
+          <div id="queryAnswer" class="answer">知识库中已有一条示例纪要。保存当前会议后，可查询本次会议内容。</div>
+          <div id="historyList" class="history-list" aria-label="历史纪要列表"></div>
+        </div>
+      </section>
+    </section>
+
+  </main>
+
+  <script>
+    (function () {
+      const samples = [
+        {
+          time: "00:01:12",
+          speaker: "会议主持人",
+          text: "本次会议聚焦三项核心能力：会议视频转文字、自动生成结构化纪要、历史纪要知识库查询。"
+        },
+        {
+          time: "00:03:28",
+          speaker: "会议主持人",
+          text: "产品形态先限定为网页端访问，不要求用户下载安装客户端，适合线上演示和本地小型会议场景。"
+        },
+        {
+          time: "00:06:45",
+          speaker: "会议主持人",
+          text: "本阶段只开放会议主持人一个角色，所有记录、整理、保存和查询操作都由主持人独立完成。"
+        },
+        {
+          time: "00:10:09",
+          speaker: "会议主持人",
+          text: "待办事项包括：确认视频转写入口、完善纪要模板、准备三条历史纪要样例，并在 Coze 中配置知识库。"
+        },
+        {
+          time: "00:13:37",
+          speaker: "会议主持人",
+          text: "主要风险是实时转写稳定性和知识库写入权限，需要在正式接入前确认 Coze 空间能力和接口限制。"
+        }
+      ];
+
+      const history = [
+        {
+          title: "2026-07-20 产品评审会纪要",
+          summary: "确认先交付网页端会议工作台，暂缓多角色协作和客户端能力。",
+          tasks: "准备会议样例数据、补充会议纪要模板、确认知识库结构。"
+        }
+      ];
+
+      let transcript = [];
+      let minutesGenerated = false;
+      let transcriptTimer = null;
+      let screenStream = null;
+      let meetingActive = false;
+
+      const meetingStatus = document.getElementById("meetingStatus");
+      const videoSurface = document.getElementById("videoSurface");
+      const screenVideo = document.getElementById("screenVideo");
+      const videoState = document.getElementById("videoState");
+      const startBtn = document.getElementById("startBtn");
+      const minutesBtn = document.getElementById("minutesBtn");
+      const saveBtn = document.getElementById("saveBtn");
+      const transcriptList = document.getElementById("transcriptList");
+      const transcriptCount = document.getElementById("transcriptCount");
+      const minutesContent = document.getElementById("minutesContent");
+      const minutesState = document.getElementById("minutesState");
+      const queryInput = document.getElementById("queryInput");
+      const queryBtn = document.getElementById("queryBtn");
+      const queryAnswer = document.getElementById("queryAnswer");
+      const historyList = document.getElementById("historyList");
+
+      function renderTranscript() {
+        transcriptCount.textContent = transcript.length + " 条";
+        if (transcript.length === 0) {
+          transcriptList.innerHTML = '<div class="empty-state">会议开始后，转写内容将自动显示。</div>';
+          return;
+        }
+
+        transcriptList.innerHTML = transcript.map((item) => `
+          <article class="transcript-item">
+            <span class="time">${item.time}</span>
+            <div>
+              <p class="speaker">${item.speaker}</p>
+              <p class="text">${item.text}</p>
+            </div>
+          </article>
+        `).join("");
+        transcriptList.scrollTop = transcriptList.scrollHeight;
+      }
+
+      function setMeetingStatus(text, className) {
+        meetingStatus.textContent = text;
+        meetingStatus.classList.remove("status-idle", "status-live");
+        meetingStatus.classList.add(className);
+      }
+
+      function renderMinutes() {
+        if (transcript.length === 0) {
+          minutesContent.innerHTML = '<div class="empty-state">暂无实时转写内容，无法生成纪要。</div>';
+          return;
+        }
+
+        minutesGenerated = true;
+        minutesState.textContent = "已生成";
+        saveBtn.disabled = false;
+        minutesContent.innerHTML = `
+          <div class="minutes">
+            <section class="minutes-section">
+              <p class="section-label">会议主题</p>
+              <p>产品最小功能验证会议</p>
+            </section>
+            <section class="minutes-section">
+              <p class="section-label">会议摘要</p>
+              <p>会议主持人围绕网页端会议工作台的最小功能进行确认，范围聚焦视频会议转文字、结构化纪要生成和历史纪要知识库查询。</p>
+            </section>
+            <section class="minutes-section">
+              <p class="section-label">关键讨论</p>
+              <ul>
+                <li>当前版本只开放会议主持人单一角色。</li>
+                <li>视频区域先预留为空，后续替换为真实播放器。</li>
+                <li>实时转写和历史查询先用本地模拟数据验证流程。</li>
+              </ul>
+            </section>
+            <section class="minutes-section">
+              <p class="section-label">已确认结论</p>
+              <p>先完成网页端可交互原型，再根据评估结果映射到 Coze 工作流。</p>
+            </section>
+            <section class="minutes-section">
+              <p class="section-label">待办事项</p>
+              <table class="task-table">
+                <thead>
+                  <tr>
+                    <th>事项</th>
+                    <th>负责人</th>
+                    <th>截止时间</th>
+                    <th>状态</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>确认视频转写入口</td>
+                    <td>会议主持人</td>
+                    <td>页面评估后</td>
+                    <td>待确认</td>
+                  </tr>
+                  <tr>
+                    <td>完善纪要模板</td>
+                    <td>会议主持人</td>
+                    <td>Coze 搭建前</td>
+                    <td>进行中</td>
+                  </tr>
+                  <tr>
+                    <td>配置会议纪要知识库</td>
+                    <td>会议主持人</td>
+                    <td>工作流联调时</td>
+                    <td>未开始</td>
+                  </tr>
+                </tbody>
+              </table>
+            </section>
+            <section class="minutes-section">
+              <p class="section-label">风险与遗留问题</p>
+              <p>需要确认 Coze 空间是否支持知识库写入节点；若不支持，先采用主持人手动上传纪要的降级方案。</p>
+            </section>
+          </div>
+        `;
+      }
+
+      function renderHistory() {
+        historyList.innerHTML = history.map((item) => `
+          <article class="history-card">
+            <strong>${item.title}</strong>
+            <span>${item.summary}</span>
+          </article>
+        `).join("");
+      }
+
+      function saveCurrentMinutes() {
+        if (!minutesGenerated) {
+          return;
+        }
+
+        const exists = history.some((item) => item.title === "2026-07-27 产品最小功能验证会议纪要");
+        if (!exists) {
+          history.unshift({
+            title: "2026-07-27 产品最小功能验证会议纪要",
+            summary: "确认单角色会议主持人工作台，视频区预留为空，核心链路为转写、纪要和知识库查询。",
+            tasks: "确认视频转写入口、完善纪要模板、配置会议纪要知识库。"
+          });
+        }
+
+        saveBtn.textContent = "已保存";
+        renderHistory();
+        queryAnswer.textContent = "会议主持人已将当前纪要保存到历史纪要知识库，可继续查询本次会议结论和待办。";
+      }
+
+      function queryHistory() {
+        const question = queryInput.value.trim();
+        const combined = history.map((item) => `${item.title}：${item.summary} 待办：${item.tasks}`).join("\n");
+
+        if (!question) {
+          queryAnswer.textContent = "请输入需要查询的历史会议问题。";
+          return;
+        }
+
+        if (question.includes("待办") || question.includes("事项")) {
+          queryAnswer.textContent = "根据历史纪要，相关待办包括：确认视频转写入口、完善纪要模板、配置会议纪要知识库。来源：产品最小功能验证会议纪要。";
+          return;
+        }
+
+        if (question.includes("视频")) {
+          queryAnswer.textContent = "根据历史纪要，视频区当前保留为空占位，后续替换为 video、iframe 或会议录制播放器。";
+          return;
+        }
+
+        if (question.includes("角色")) {
+          queryAnswer.textContent = "根据历史纪要，当前版本只开放一个角色：会议主持人，所有操作由主持人独立完成。";
+          return;
+        }
+
+        queryAnswer.textContent = combined
+          ? "历史纪要中检索到相关会议，但没有命中明确字段。建议围绕待办、视频、角色或结论继续提问。"
+          : "历史纪要中未检索到相关内容。";
+      }
+
+      async function startScreenShare() {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+          videoState.textContent = "视频状态：当前浏览器不支持屏幕共享";
+          return false;
+        }
+
+        try {
+          screenStream = await navigator.mediaDevices.getDisplayMedia({
+            video: {
+              frameRate: 30
+            },
+            audio: false
+          });
+          screenVideo.srcObject = screenStream;
+          videoSurface.classList.add("is-live");
+          videoState.textContent = "视频状态：正在共享本地屏幕";
+
+          const [track] = screenStream.getVideoTracks();
+          if (track) {
+            track.addEventListener("ended", () => {
+              clearScreenShare("视频状态：屏幕共享已停止");
+            });
+          }
+          return true;
+        } catch (error) {
+          videoSurface.classList.remove("is-live");
+          screenVideo.srcObject = null;
+          videoState.textContent = "视频状态：未授权屏幕共享";
+          return false;
+        }
+      }
+
+      function clearScreenShare(statusText) {
+        if (screenStream) {
+          screenStream.getTracks().forEach((track) => track.stop());
+        }
+        screenStream = null;
+        screenVideo.srcObject = null;
+        videoSurface.classList.remove("is-live");
+        videoState.textContent = statusText;
+      }
+
+      async function startMeeting() {
+        meetingActive = true;
+        setMeetingStatus("状态：记录中", "status-live");
+        videoState.textContent = "视频状态：请求屏幕共享中";
+        startBtn.textContent = "停止会议";
+        minutesBtn.disabled = false;
+        await startScreenShare();
+        startAutoTranscript();
+      }
+
+      function stopMeeting() {
+        meetingActive = false;
+        if (transcriptTimer) {
+          clearInterval(transcriptTimer);
+          transcriptTimer = null;
+        }
+        clearScreenShare("视频状态：会议已停止");
+        setMeetingStatus("状态：已结束", "status-idle");
+        startBtn.textContent = "重新开始会议";
+        minutesBtn.disabled = transcript.length === 0;
+      }
+
+      startBtn.addEventListener("click", async () => {
+        if (meetingActive) {
+          stopMeeting();
+          return;
+        }
+        await startMeeting();
+      });
+
+      function addNextTranscript() {
+        if (transcript.length >= samples.length) {
+          clearInterval(transcriptTimer);
+          transcriptTimer = null;
+          return;
+        }
+
+        const next = samples[transcript.length % samples.length];
+        transcript.push(next);
+        renderTranscript();
+        minutesState.textContent = "待更新";
+        saveBtn.disabled = true;
+        saveBtn.textContent = "保存到知识库";
+        minutesGenerated = false;
+      }
+
+      function startAutoTranscript() {
+        if (transcriptTimer) {
+          clearInterval(transcriptTimer);
+        }
+        addNextTranscript();
+        transcriptTimer = setInterval(addNextTranscript, 900);
+      }
+
+      minutesBtn.addEventListener("click", renderMinutes);
+      saveBtn.addEventListener("click", saveCurrentMinutes);
+      queryBtn.addEventListener("click", queryHistory);
+
+      renderTranscript();
+      renderHistory();
+    })();
+  </script>
+</div>
+</body>
+</html>
