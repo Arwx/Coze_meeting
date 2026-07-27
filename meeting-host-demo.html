@@ -1434,6 +1434,25 @@
       }
     }
 
+    // 浏览器 Web Speech 兜底路径里，这些错误重试也没用，直接停止避免刷屏。
+    const FATAL_BROWSER_SPEECH_ERRORS = new Set(["not-allowed", "service-not-allowed", "network", "audio-capture", "language-not-supported"]);
+
+    function describeBrowserSpeechError(code) {
+      switch (code) {
+        case "network":
+          return "浏览器语音识别连不上服务（network）。Chrome 的 Web Speech 依赖 Google 语音服务器，中国大陆直连通常无法访问，请以 Coze ASR 为准。";
+        case "not-allowed":
+        case "service-not-allowed":
+          return "麦克风权限被拒绝（not-allowed）。请在地址栏允许麦克风，并确保用 https 或 http://localhost 打开页面。";
+        case "audio-capture":
+          return "未检测到可用麦克风（audio-capture）。请检查麦克风设备。";
+        case "no-speech":
+          return "未检测到语音（no-speech）。请靠近麦克风讲话。";
+        default:
+          return `浏览器语音识别提示：${code || "识别中断"}。`;
+      }
+    }
+
     function startBrowserSpeechRecognition() {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SpeechRecognition) {
@@ -1463,12 +1482,12 @@
       });
 
       recognition.addEventListener("error", (event) => {
-        if (event.error === "not-allowed" || event.error === "service-not-allowed") {
+        if (FATAL_BROWSER_SPEECH_ERRORS.has(event.error)) {
           browserSpeechFatal = true;
           browserSpeechShouldRestart = false;
         }
         if (meetingActive) {
-          setAsrStatus(`浏览器语音识别提示：${event.error || "识别中断"}。`);
+          setAsrStatus(describeBrowserSpeechError(event.error));
         }
       });
 
