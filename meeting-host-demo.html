@@ -122,6 +122,65 @@
       justify-content: flex-end;
     }
 
+    .coze-config {
+      margin-top: 18px;
+      padding: 16px;
+      background: rgba(255, 255, 255, 0.92);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      box-shadow: 0 12px 34px rgba(17, 24, 39, 0.08);
+    }
+
+    .config-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .config-title {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .config-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(160px, 1fr));
+      gap: 10px;
+    }
+
+    .field {
+      display: grid;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .field label {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .field input {
+      min-height: 38px;
+      padding: 8px 10px;
+      font-size: 13px;
+    }
+
+    .config-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      margin-top: 12px;
+    }
+
+    .config-note {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
     button {
       min-height: 40px;
       padding: 10px 15px;
@@ -464,6 +523,16 @@
       border: 1px solid rgba(37, 99, 235, 0.18);
       font-size: 14px;
       line-height: 1.72;
+      white-space: pre-wrap;
+    }
+
+    .markdown-output {
+      margin: 0;
+      color: var(--ink);
+      font-family: "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
+      font-size: 14px;
+      line-height: 1.75;
+      white-space: pre-wrap;
     }
 
     .history-list {
@@ -531,6 +600,15 @@
         flex: 1 1 150px;
       }
 
+      .config-head {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .config-grid {
+        grid-template-columns: 1fr;
+      }
+
       .video-placeholder {
         min-height: 210px;
       }
@@ -562,6 +640,51 @@
         <button id="startBtn" class="primary" type="button">开始会议</button>
         <button id="minutesBtn" type="button" disabled>生成纪要</button>
         <button id="saveBtn" type="button" disabled>保存到知识库</button>
+      </div>
+    </section>
+
+    <section class="coze-config" aria-label="Coze 直连配置">
+      <div class="config-head">
+        <h2 class="config-title">运行配置</h2>
+        <span id="cozeStatus" class="badge status-idle">Coze：未配置</span>
+      </div>
+      <div class="config-grid">
+        <div class="field">
+          <label for="cozeBaseUrl">API 地址</label>
+          <input id="cozeBaseUrl" value="https://api.coze.cn" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="cozePat">Personal Access Token</label>
+          <input id="cozePat" type="password" placeholder="来自 config.local.js" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="cozeBotId">Bot ID（可选）</label>
+          <input id="cozeBotId" placeholder="应用工作流可先留空" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="wfReceiveTranscript">转写清洗工作流 ID</label>
+          <input id="wfReceiveTranscript" placeholder="wf_receive_transcript" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="wfGenerateMinutes">生成纪要工作流 ID</label>
+          <input id="wfGenerateMinutes" placeholder="wf_generate_minutes" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="wfSaveMinutes">保存知识库工作流 ID</label>
+          <input id="wfSaveMinutes" placeholder="wf_save_minutes" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="wfSearchMinutes">历史查询工作流 ID</label>
+          <input id="wfSearchMinutes" placeholder="wf_search_minutes" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="meetingTitleInput">会议标题</label>
+          <input id="meetingTitleInput" value="产品最小功能验证会议" autocomplete="off">
+        </div>
+      </div>
+      <div class="config-actions">
+        <button id="saveConfigBtn" type="button">应用当前填写值</button>
+        <span class="config-note">默认读取 config.local.js；密钥会暴露在浏览器，仅适合本地演示。</span>
       </div>
     </section>
 
@@ -629,323 +752,670 @@
 
   </main>
 
-  <script>
-    (function () {
-      const samples = [
-        {
-          time: "00:01:12",
-          speaker: "会议主持人",
-          text: "本次会议聚焦三项核心能力：会议视频转文字、自动生成结构化纪要、历史纪要知识库查询。"
-        },
-        {
-          time: "00:03:28",
-          speaker: "会议主持人",
-          text: "产品形态先限定为网页端访问，不要求用户下载安装客户端，适合线上演示和本地小型会议场景。"
-        },
-        {
-          time: "00:06:45",
-          speaker: "会议主持人",
-          text: "本阶段只开放会议主持人一个角色，所有记录、整理、保存和查询操作都由主持人独立完成。"
-        },
-        {
-          time: "00:10:09",
-          speaker: "会议主持人",
-          text: "待办事项包括：确认视频转写入口、完善纪要模板、准备三条历史纪要样例，并在 Coze 中配置知识库。"
-        },
-        {
-          time: "00:13:37",
-          speaker: "会议主持人",
-          text: "主要风险是实时转写稳定性和知识库写入权限，需要在正式接入前确认 Coze 空间能力和接口限制。"
+  <script src="config.local.js"></script>
+  <script type="module">
+    const WORKFLOW_ENDPOINT = "/v1/workflow/run";
+    const DEFAULT_CONFIG = window.MEETING_HOST_CONFIG || {};
+
+    const history = [
+      {
+        title: "2026-07-20 产品评审会纪要",
+        summary: "确认先交付网页端会议工作台，暂缓多角色协作和客户端能力。"
+      }
+    ];
+
+    let transcript = [];
+    let minutesGenerated = false;
+    let meetingActive = false;
+    let screenStream = null;
+    let micStream = null;
+    let asrLoopActive = false;
+    let audioDecodeContext = null;
+    let meetingId = "";
+    let meetingStartedAt = 0;
+    let currentMinutesMarkdown = "";
+
+    const meetingStatus = document.getElementById("meetingStatus");
+    const videoSurface = document.getElementById("videoSurface");
+    const screenVideo = document.getElementById("screenVideo");
+    const videoState = document.getElementById("videoState");
+    const startBtn = document.getElementById("startBtn");
+    const minutesBtn = document.getElementById("minutesBtn");
+    const saveBtn = document.getElementById("saveBtn");
+    const transcriptList = document.getElementById("transcriptList");
+    const transcriptCount = document.getElementById("transcriptCount");
+    const minutesContent = document.getElementById("minutesContent");
+    const minutesState = document.getElementById("minutesState");
+    const queryInput = document.getElementById("queryInput");
+    const queryBtn = document.getElementById("queryBtn");
+    const queryAnswer = document.getElementById("queryAnswer");
+    const historyList = document.getElementById("historyList");
+    const cozeStatus = document.getElementById("cozeStatus");
+    const cozeBaseUrl = document.getElementById("cozeBaseUrl");
+    const cozePat = document.getElementById("cozePat");
+    const cozeBotId = document.getElementById("cozeBotId");
+    const wfReceiveTranscript = document.getElementById("wfReceiveTranscript");
+    const wfGenerateMinutes = document.getElementById("wfGenerateMinutes");
+    const wfSaveMinutes = document.getElementById("wfSaveMinutes");
+    const wfSearchMinutes = document.getElementById("wfSearchMinutes");
+    const meetingTitleInput = document.getElementById("meetingTitleInput");
+    const saveConfigBtn = document.getElementById("saveConfigBtn");
+
+    function escapeHtml(value) {
+      return String(value || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function setBadge(element, text, className) {
+      element.textContent = text;
+      element.classList.remove("status-idle", "status-live");
+      element.classList.add(className);
+    }
+
+    function normalizeBaseUrl(value) {
+      return String(value || "https://api.coze.cn").replace(/\/+$/, "");
+    }
+
+    function getConfig() {
+      return {
+        baseUrl: normalizeBaseUrl(cozeBaseUrl.value),
+        pat: cozePat.value.trim(),
+        botId: cozeBotId.value.trim(),
+        receiveTranscriptWorkflowId: wfReceiveTranscript.value.trim(),
+        generateMinutesWorkflowId: wfGenerateMinutes.value.trim(),
+        saveMinutesWorkflowId: wfSaveMinutes.value.trim(),
+        searchMinutesWorkflowId: wfSearchMinutes.value.trim(),
+        meetingTitle: meetingTitleInput.value.trim() || "产品最小功能验证会议",
+        aliyunBailian: {
+          apiKey: DEFAULT_CONFIG.aliyunBailian?.apiKey || "",
+          endpoint: DEFAULT_CONFIG.aliyunBailian?.endpoint || "https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation",
+          model: DEFAULT_CONFIG.aliyunBailian?.model || "fun-asr-flash-2026-06-15",
+          format: DEFAULT_CONFIG.aliyunBailian?.format || "wav",
+          sampleRate: Number(DEFAULT_CONFIG.aliyunBailian?.sampleRate || 16000),
+          chunkMs: Number(DEFAULT_CONFIG.aliyunBailian?.chunkMs || 5000)
         }
-      ];
+      };
+    }
 
-      const history = [
-        {
-          title: "2026-07-20 产品评审会纪要",
-          summary: "确认先交付网页端会议工作台，暂缓多角色协作和客户端能力。",
-          tasks: "准备会议样例数据、补充会议纪要模板、确认知识库结构。"
-        }
-      ];
+    function saveConfig() {
+      const config = getConfig();
+      document.getElementById("meetingTitle").textContent = config.meetingTitle;
+      setCozeStatus();
+    }
 
-      let transcript = [];
-      let minutesGenerated = false;
-      let transcriptTimer = null;
-      let screenStream = null;
-      let meetingActive = false;
+    function loadConfig() {
+      const coze = DEFAULT_CONFIG.coze || {};
+      const workflows = coze.workflows || {};
+      cozeBaseUrl.value = coze.baseUrl || "https://api.coze.cn";
+      cozePat.value = coze.pat || "";
+      cozeBotId.value = coze.botId || "";
+      wfReceiveTranscript.value = workflows.receiveTranscript || "";
+      wfGenerateMinutes.value = workflows.generateMinutes || "";
+      wfSaveMinutes.value = workflows.saveMinutes || "";
+      wfSearchMinutes.value = workflows.searchMinutes || "";
+      meetingTitleInput.value = DEFAULT_CONFIG.app?.meetingTitle || "产品最小功能验证会议";
+      document.getElementById("meetingTitle").textContent = meetingTitleInput.value;
+      setCozeStatus();
+    }
 
-      const meetingStatus = document.getElementById("meetingStatus");
-      const videoSurface = document.getElementById("videoSurface");
-      const screenVideo = document.getElementById("screenVideo");
-      const videoState = document.getElementById("videoState");
-      const startBtn = document.getElementById("startBtn");
-      const minutesBtn = document.getElementById("minutesBtn");
-      const saveBtn = document.getElementById("saveBtn");
-      const transcriptList = document.getElementById("transcriptList");
-      const transcriptCount = document.getElementById("transcriptCount");
-      const minutesContent = document.getElementById("minutesContent");
-      const minutesState = document.getElementById("minutesState");
-      const queryInput = document.getElementById("queryInput");
-      const queryBtn = document.getElementById("queryBtn");
-      const queryAnswer = document.getElementById("queryAnswer");
-      const historyList = document.getElementById("historyList");
+    function setCozeStatus() {
+      const config = getConfig();
+      const ready = Boolean(config.pat && config.generateMinutesWorkflowId && config.saveMinutesWorkflowId && config.searchMinutesWorkflowId);
+      setBadge(cozeStatus, ready ? "Coze：已配置" : "Coze：未配置完整", ready ? "status-live" : "status-idle");
+    }
 
-      function renderTranscript() {
-        transcriptCount.textContent = transcript.length + " 条";
-        if (transcript.length === 0) {
-          transcriptList.innerHTML = '<div class="empty-state">会议开始后，转写内容将自动显示。</div>';
-          return;
-        }
-
-        transcriptList.innerHTML = transcript.map((item) => `
-          <article class="transcript-item">
-            <span class="time">${item.time}</span>
-            <div>
-              <p class="speaker">${item.speaker}</p>
-              <p class="text">${item.text}</p>
-            </div>
-          </article>
-        `).join("");
-        transcriptList.scrollTop = transcriptList.scrollHeight;
+    function renderTranscript() {
+      transcriptCount.textContent = transcript.length + " 条";
+      if (transcript.length === 0) {
+        transcriptList.innerHTML = '<div class="empty-state">会议开始后，麦克风转写内容将自动显示。</div>';
+        return;
       }
 
-      function setMeetingStatus(text, className) {
-        meetingStatus.textContent = text;
-        meetingStatus.classList.remove("status-idle", "status-live");
-        meetingStatus.classList.add(className);
+      transcriptList.innerHTML = transcript.map((item) => `
+        <article class="transcript-item">
+          <span class="time">${escapeHtml(item.time)}</span>
+          <div>
+            <p class="speaker">${escapeHtml(item.speaker)}</p>
+            <p class="text">${escapeHtml(item.text)}</p>
+          </div>
+        </article>
+      `).join("");
+      transcriptList.scrollTop = transcriptList.scrollHeight;
+    }
+
+    function renderHistory() {
+      historyList.innerHTML = history.map((item) => `
+        <article class="history-card">
+          <strong>${escapeHtml(item.title)}</strong>
+          <span>${escapeHtml(item.summary)}</span>
+        </article>
+      `).join("");
+    }
+
+    function renderMarkdown(markdown) {
+      return `<pre class="markdown-output">${escapeHtml(markdown)}</pre>`;
+    }
+
+    function formatClock(ms) {
+      const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+      const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, "0");
+      const seconds = String(totalSeconds % 60).padStart(2, "0");
+      return `${minutes}:${seconds}`;
+    }
+
+    function parseMaybeJson(value) {
+      if (typeof value !== "string") {
+        return value;
+      }
+      try {
+        return JSON.parse(value);
+      } catch (error) {
+        return value;
+      }
+    }
+
+    function unwrapWorkflowData(response) {
+      const data = parseMaybeJson(response.data);
+      if (data && typeof data === "object" && "output" in data) {
+        return parseMaybeJson(data.output);
+      }
+      return data;
+    }
+
+    function pickWorkflowText(value, keys) {
+      const data = parseMaybeJson(value);
+      if (typeof data === "string") {
+        return data;
+      }
+      if (!data || typeof data !== "object") {
+        return "";
+      }
+      for (const key of keys) {
+        if (typeof data[key] === "string") {
+          return data[key];
+        }
+      }
+      if (typeof data.output === "string") {
+        return data.output;
+      }
+      return JSON.stringify(data, null, 2);
+    }
+
+    async function callWorkflow(workflowId, parameters) {
+      const config = getConfig();
+      if (!config.pat) {
+        throw new Error("请先填写 Coze Personal Access Token。");
+      }
+      if (!workflowId) {
+        throw new Error("请先填写对应的 Coze 工作流 ID。");
       }
 
-      function renderMinutes() {
-        if (transcript.length === 0) {
-          minutesContent.innerHTML = '<div class="empty-state">暂无实时转写内容，无法生成纪要。</div>';
-          return;
-        }
+      const response = await fetch(`${config.baseUrl}${WORKFLOW_ENDPOINT}`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${config.pat}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          workflow_id: workflowId,
+          bot_id: config.botId || undefined,
+          parameters
+        })
+      });
 
+      if (!response.ok) {
+        throw new Error(`Coze 请求失败：HTTP ${response.status}`);
+      }
+
+      const payload = await response.json();
+      if (payload.code !== 0 && payload.code !== "0") {
+        throw new Error(payload.msg || "Coze 工作流执行失败。");
+      }
+      return unwrapWorkflowData(payload);
+    }
+
+    async function cleanTranscriptChunk(rawText) {
+      const config = getConfig();
+      if (!config.receiveTranscriptWorkflowId) {
+        return rawText;
+      }
+      const result = await callWorkflow(config.receiveTranscriptWorkflowId, {
+        meeting_id: meetingId,
+        meeting_title: config.meetingTitle,
+        transcript_chunk: rawText,
+        timestamp: formatClock(Date.now() - meetingStartedAt)
+      });
+      return pickWorkflowText(result, ["clean_chunk", "text", "output"]) || rawText;
+    }
+
+    async function appendTranscriptChunk(rawText) {
+      const text = rawText.trim();
+      if (!text) {
+        return;
+      }
+
+      const cleanText = await cleanTranscriptChunk(text);
+      transcript.push({
+        time: formatClock(Date.now() - meetingStartedAt),
+        speaker: "会议主持人",
+        text: cleanText
+      });
+      renderTranscript();
+      minutesState.textContent = "待更新";
+      minutesGenerated = false;
+      currentMinutesMarkdown = "";
+      saveBtn.disabled = true;
+      saveBtn.textContent = "保存到知识库";
+      minutesBtn.disabled = false;
+    }
+
+    function pickRecorderMimeType() {
+      const candidates = [
+        "audio/webm;codecs=opus",
+        "audio/webm",
+        "audio/ogg;codecs=opus",
+        "audio/mp4"
+      ];
+      return candidates.find((type) => MediaRecorder.isTypeSupported(type)) || "";
+    }
+
+    function recordOneAudioChunk(stream, chunkMs) {
+      return new Promise((resolve, reject) => {
+        const mimeType = pickRecorderMimeType();
+        const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+        const chunks = [];
+        const stopTimer = window.setTimeout(() => {
+          if (recorder.state !== "inactive") {
+            recorder.stop();
+          }
+        }, chunkMs);
+
+        recorder.addEventListener("dataavailable", (event) => {
+          if (event.data && event.data.size > 0) {
+            chunks.push(event.data);
+          }
+        });
+        recorder.addEventListener("error", () => {
+          window.clearTimeout(stopTimer);
+          reject(new Error("浏览器录音失败。"));
+        });
+        recorder.addEventListener("stop", () => {
+          window.clearTimeout(stopTimer);
+          resolve(new Blob(chunks, { type: recorder.mimeType || "audio/webm" }));
+        });
+        recorder.start();
+      });
+    }
+
+    function resampleChannel(channelData, sourceRate, targetRate) {
+      if (sourceRate === targetRate) {
+        return channelData;
+      }
+      const ratio = sourceRate / targetRate;
+      const targetLength = Math.round(channelData.length / ratio);
+      const result = new Float32Array(targetLength);
+      for (let i = 0; i < targetLength; i += 1) {
+        const sourceIndex = i * ratio;
+        const before = Math.floor(sourceIndex);
+        const after = Math.min(before + 1, channelData.length - 1);
+        const weight = sourceIndex - before;
+        result[i] = channelData[before] * (1 - weight) + channelData[after] * weight;
+      }
+      return result;
+    }
+
+    function floatTo16BitPcm(view, offset, input) {
+      for (let i = 0; i < input.length; i += 1, offset += 2) {
+        const sample = Math.max(-1, Math.min(1, input[i]));
+        view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7fff, true);
+      }
+    }
+
+    function writeString(view, offset, value) {
+      for (let i = 0; i < value.length; i += 1) {
+        view.setUint8(offset + i, value.charCodeAt(i));
+      }
+    }
+
+    function encodeWav(samples, sampleRate) {
+      const buffer = new ArrayBuffer(44 + samples.length * 2);
+      const view = new DataView(buffer);
+      writeString(view, 0, "RIFF");
+      view.setUint32(4, 36 + samples.length * 2, true);
+      writeString(view, 8, "WAVE");
+      writeString(view, 12, "fmt ");
+      view.setUint32(16, 16, true);
+      view.setUint16(20, 1, true);
+      view.setUint16(22, 1, true);
+      view.setUint32(24, sampleRate, true);
+      view.setUint32(28, sampleRate * 2, true);
+      view.setUint16(32, 2, true);
+      view.setUint16(34, 16, true);
+      writeString(view, 36, "data");
+      view.setUint32(40, samples.length * 2, true);
+      floatTo16BitPcm(view, 44, samples);
+      return new Blob([view], { type: "audio/wav" });
+    }
+
+    function blobToBase64(blob) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(String(reader.result).split(",")[1] || "");
+        reader.onerror = () => reject(new Error("音频编码失败。"));
+        reader.readAsDataURL(blob);
+      });
+    }
+
+    async function audioBlobToWavDataUri(blob, sampleRate) {
+      const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
+      audioDecodeContext = audioDecodeContext || new AudioContextCtor();
+      const arrayBuffer = await blob.arrayBuffer();
+      const decoded = await audioDecodeContext.decodeAudioData(arrayBuffer);
+      const mono = decoded.numberOfChannels > 1
+        ? decoded.getChannelData(0).map((sample, index) => {
+            let sum = sample;
+            for (let channel = 1; channel < decoded.numberOfChannels; channel += 1) {
+              sum += decoded.getChannelData(channel)[index];
+            }
+            return sum / decoded.numberOfChannels;
+          })
+        : decoded.getChannelData(0);
+      const resampled = resampleChannel(mono, decoded.sampleRate, sampleRate);
+      const wavBlob = encodeWav(resampled, sampleRate);
+      const base64 = await blobToBase64(wavBlob);
+      return `data:audio/wav;base64,${base64}`;
+    }
+
+    function extractAsrText(payload) {
+      const output = payload?.output || payload;
+      const choices = output?.choices || payload?.choices;
+      const content = choices?.[0]?.message?.content || output?.message?.content || output?.content;
+      if (Array.isArray(content)) {
+        const textItem = content.find((item) => typeof item?.text === "string" || typeof item?.transcription === "string");
+        if (textItem) {
+          return textItem.text || textItem.transcription;
+        }
+      }
+      if (typeof content === "string") {
+        return content;
+      }
+      return output?.text || output?.transcription || output?.sentence?.text || output?.result?.text || "";
+    }
+
+    async function callBailianAsr(audioBlob) {
+      const config = getConfig();
+      const asr = config.aliyunBailian;
+      if (!asr.apiKey) {
+        throw new Error("请先在 config.local.js 中配置阿里云百炼 API Key。");
+      }
+      const dataUri = await audioBlobToWavDataUri(audioBlob, asr.sampleRate);
+      const response = await fetch(asr.endpoint, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${asr.apiKey}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          model: asr.model,
+          input: {
+            messages: [
+              {
+                role: "user",
+                content: [
+                  {
+                    type: "input_audio",
+                    input_audio: {
+                      data: dataUri,
+                      format: asr.format
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          parameters: {
+            format: asr.format,
+            sample_rate: asr.sampleRate
+          }
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`百炼 ASR 请求失败：HTTP ${response.status}`);
+      }
+      const payload = await response.json();
+      if (payload.code && payload.code !== "Success") {
+        throw new Error(payload.message || payload.msg || "百炼 ASR 识别失败。");
+      }
+      return extractAsrText(payload);
+    }
+
+    async function runAsrLoop() {
+      const config = getConfig();
+      asrLoopActive = true;
+      while (asrLoopActive && micStream) {
+        try {
+          const chunk = await recordOneAudioChunk(micStream, config.aliyunBailian.chunkMs);
+          if (!asrLoopActive || chunk.size === 0) {
+            continue;
+          }
+          const text = await callBailianAsr(chunk);
+          if (text.trim()) {
+            await appendTranscriptChunk(text);
+          }
+        } catch (error) {
+          queryAnswer.textContent = `百炼 ASR 失败：${error.message}`;
+          await new Promise((resolve) => window.setTimeout(resolve, 1500));
+        }
+      }
+    }
+
+    async function startBailianAsr() {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error("当前浏览器不支持麦克风采集。");
+      }
+      micStream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          channelCount: 1,
+          echoCancellation: true,
+          noiseSuppression: true
+        }
+      });
+      queryAnswer.textContent = "麦克风已接入阿里云百炼 ASR。页面会每 5 秒识别一次并追加到转写区。";
+      runAsrLoop();
+    }
+
+    async function stopBailianAsr() {
+      asrLoopActive = false;
+      if (micStream) {
+        micStream.getTracks().forEach((track) => track.stop());
+      }
+      micStream = null;
+    }
+
+    async function generateMinutes() {
+      if (transcript.length === 0) {
+        minutesContent.innerHTML = '<div class="empty-state">暂无实时转写内容，无法生成纪要。</div>';
+        return;
+      }
+
+      const config = getConfig();
+      minutesState.textContent = "生成中";
+      minutesBtn.disabled = true;
+      try {
+        const result = await callWorkflow(config.generateMinutesWorkflowId, {
+          meeting_id: meetingId,
+          meeting_title: config.meetingTitle,
+          clean_transcript: transcript.map((item) => `[${item.time}] ${item.text}`).join("\n")
+        });
+        currentMinutesMarkdown = pickWorkflowText(result, ["minutes_md", "output", "markdown", "answer"]);
+        minutesContent.innerHTML = renderMarkdown(currentMinutesMarkdown);
         minutesGenerated = true;
         minutesState.textContent = "已生成";
         saveBtn.disabled = false;
-        minutesContent.innerHTML = `
-          <div class="minutes">
-            <section class="minutes-section">
-              <p class="section-label">会议主题</p>
-              <p>产品最小功能验证会议</p>
-            </section>
-            <section class="minutes-section">
-              <p class="section-label">会议摘要</p>
-              <p>会议主持人围绕网页端会议工作台的最小功能进行确认，范围聚焦视频会议转文字、结构化纪要生成和历史纪要知识库查询。</p>
-            </section>
-            <section class="minutes-section">
-              <p class="section-label">关键讨论</p>
-              <ul>
-                <li>当前版本只开放会议主持人单一角色。</li>
-                <li>视频区域先预留为空，后续替换为真实播放器。</li>
-                <li>实时转写和历史查询先用本地模拟数据验证流程。</li>
-              </ul>
-            </section>
-            <section class="minutes-section">
-              <p class="section-label">已确认结论</p>
-              <p>先完成网页端可交互原型，再根据评估结果映射到 Coze 工作流。</p>
-            </section>
-            <section class="minutes-section">
-              <p class="section-label">待办事项</p>
-              <table class="task-table">
-                <thead>
-                  <tr>
-                    <th>事项</th>
-                    <th>负责人</th>
-                    <th>截止时间</th>
-                    <th>状态</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td>确认视频转写入口</td>
-                    <td>会议主持人</td>
-                    <td>页面评估后</td>
-                    <td>待确认</td>
-                  </tr>
-                  <tr>
-                    <td>完善纪要模板</td>
-                    <td>会议主持人</td>
-                    <td>Coze 搭建前</td>
-                    <td>进行中</td>
-                  </tr>
-                  <tr>
-                    <td>配置会议纪要知识库</td>
-                    <td>会议主持人</td>
-                    <td>工作流联调时</td>
-                    <td>未开始</td>
-                  </tr>
-                </tbody>
-              </table>
-            </section>
-            <section class="minutes-section">
-              <p class="section-label">风险与遗留问题</p>
-              <p>需要确认 Coze 空间是否支持知识库写入节点；若不支持，先采用主持人手动上传纪要的降级方案。</p>
-            </section>
-          </div>
-        `;
-      }
-
-      function renderHistory() {
-        historyList.innerHTML = history.map((item) => `
-          <article class="history-card">
-            <strong>${item.title}</strong>
-            <span>${item.summary}</span>
-          </article>
-        `).join("");
-      }
-
-      function saveCurrentMinutes() {
-        if (!minutesGenerated) {
-          return;
-        }
-
-        const exists = history.some((item) => item.title === "2026-07-27 产品最小功能验证会议纪要");
-        if (!exists) {
-          history.unshift({
-            title: "2026-07-27 产品最小功能验证会议纪要",
-            summary: "确认单角色会议主持人工作台，视频区预留为空，核心链路为转写、纪要和知识库查询。",
-            tasks: "确认视频转写入口、完善纪要模板、配置会议纪要知识库。"
-          });
-        }
-
-        saveBtn.textContent = "已保存";
-        renderHistory();
-        queryAnswer.textContent = "会议主持人已将当前纪要保存到历史纪要知识库，可继续查询本次会议结论和待办。";
-      }
-
-      function queryHistory() {
-        const question = queryInput.value.trim();
-        const combined = history.map((item) => `${item.title}：${item.summary} 待办：${item.tasks}`).join("\n");
-
-        if (!question) {
-          queryAnswer.textContent = "请输入需要查询的历史会议问题。";
-          return;
-        }
-
-        if (question.includes("待办") || question.includes("事项")) {
-          queryAnswer.textContent = "根据历史纪要，相关待办包括：确认视频转写入口、完善纪要模板、配置会议纪要知识库。来源：产品最小功能验证会议纪要。";
-          return;
-        }
-
-        if (question.includes("视频")) {
-          queryAnswer.textContent = "根据历史纪要，视频区当前保留为空占位，后续替换为 video、iframe 或会议录制播放器。";
-          return;
-        }
-
-        if (question.includes("角色")) {
-          queryAnswer.textContent = "根据历史纪要，当前版本只开放一个角色：会议主持人，所有操作由主持人独立完成。";
-          return;
-        }
-
-        queryAnswer.textContent = combined
-          ? "历史纪要中检索到相关会议，但没有命中明确字段。建议围绕待办、视频、角色或结论继续提问。"
-          : "历史纪要中未检索到相关内容。";
-      }
-
-      async function startScreenShare() {
-        if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
-          videoState.textContent = "视频状态：当前浏览器不支持屏幕共享";
-          return false;
-        }
-
-        try {
-          screenStream = await navigator.mediaDevices.getDisplayMedia({
-            video: {
-              frameRate: 30
-            },
-            audio: false
-          });
-          screenVideo.srcObject = screenStream;
-          videoSurface.classList.add("is-live");
-          videoState.textContent = "视频状态：正在共享本地屏幕";
-
-          const [track] = screenStream.getVideoTracks();
-          if (track) {
-            track.addEventListener("ended", () => {
-              clearScreenShare("视频状态：屏幕共享已停止");
-            });
-          }
-          return true;
-        } catch (error) {
-          videoSurface.classList.remove("is-live");
-          screenVideo.srcObject = null;
-          videoState.textContent = "视频状态：未授权屏幕共享";
-          return false;
-        }
-      }
-
-      function clearScreenShare(statusText) {
-        if (screenStream) {
-          screenStream.getTracks().forEach((track) => track.stop());
-        }
-        screenStream = null;
-        screenVideo.srcObject = null;
-        videoSurface.classList.remove("is-live");
-        videoState.textContent = statusText;
-      }
-
-      async function startMeeting() {
-        meetingActive = true;
-        setMeetingStatus("状态：记录中", "status-live");
-        videoState.textContent = "视频状态：请求屏幕共享中";
-        startBtn.textContent = "停止会议";
+      } catch (error) {
+        minutesState.textContent = "生成失败";
+        minutesContent.innerHTML = `<div class="empty-state">${escapeHtml(error.message)}</div>`;
+      } finally {
         minutesBtn.disabled = false;
-        await startScreenShare();
-        startAutoTranscript();
+      }
+    }
+
+    async function saveCurrentMinutes() {
+      if (!minutesGenerated || !currentMinutesMarkdown) {
+        return;
       }
 
-      function stopMeeting() {
-        meetingActive = false;
-        if (transcriptTimer) {
-          clearInterval(transcriptTimer);
-          transcriptTimer = null;
-        }
-        clearScreenShare("视频状态：会议已停止");
-        setMeetingStatus("状态：已结束", "status-idle");
-        startBtn.textContent = "重新开始会议";
-        minutesBtn.disabled = transcript.length === 0;
-      }
-
-      startBtn.addEventListener("click", async () => {
-        if (meetingActive) {
-          stopMeeting();
-          return;
-        }
-        await startMeeting();
-      });
-
-      function addNextTranscript() {
-        if (transcript.length >= samples.length) {
-          clearInterval(transcriptTimer);
-          transcriptTimer = null;
-          return;
-        }
-
-        const next = samples[transcript.length % samples.length];
-        transcript.push(next);
-        renderTranscript();
-        minutesState.textContent = "待更新";
-        saveBtn.disabled = true;
+      const config = getConfig();
+      saveBtn.disabled = true;
+      saveBtn.textContent = "保存中";
+      try {
+        const result = await callWorkflow(config.saveMinutesWorkflowId, {
+          meeting_id: meetingId,
+          meeting_title: config.meetingTitle,
+          knowledge: currentMinutesMarkdown,
+          created_at: new Date().toISOString()
+        });
+        const documentId = pickWorkflowText(result, ["documentId", "knowledge_document_id", "document_id", "output"]);
+        const fileUrl = pickWorkflowText(result, ["fileUrl", "file_url"]);
+        history.unshift({
+          title: `${new Date().toLocaleDateString("zh-CN")} ${config.meetingTitle}纪要`,
+          summary: documentId ? `已写入 Coze 知识库：${documentId}${fileUrl ? `，${fileUrl}` : ""}` : "已写入 Coze 知识库。"
+        });
+        saveBtn.textContent = "已保存";
+        queryAnswer.textContent = "会议主持人已将当前纪要保存到 Coze 会议纪要知识库。";
+        renderHistory();
+      } catch (error) {
+        saveBtn.disabled = false;
         saveBtn.textContent = "保存到知识库";
-        minutesGenerated = false;
+        queryAnswer.textContent = `保存失败：${error.message}`;
+      }
+    }
+
+    async function queryHistory() {
+      const question = queryInput.value.trim();
+      if (!question) {
+        queryAnswer.textContent = "请输入需要查询的历史会议问题。";
+        return;
       }
 
-      function startAutoTranscript() {
-        if (transcriptTimer) {
-          clearInterval(transcriptTimer);
+      const config = getConfig();
+      queryBtn.disabled = true;
+      queryBtn.textContent = "查询中";
+      try {
+        const result = await callWorkflow(config.searchMinutesWorkflowId, {
+          query: question,
+          meeting_scope: ""
+        });
+        queryAnswer.textContent = pickWorkflowText(result, ["output", "answer", "result"]);
+      } catch (error) {
+        queryAnswer.textContent = `查询失败：${error.message}`;
+      } finally {
+        queryBtn.disabled = false;
+        queryBtn.textContent = "查询历史纪要";
+      }
+    }
+
+    async function startScreenShare() {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+        videoState.textContent = "视频状态：当前浏览器不支持屏幕共享";
+        return false;
+      }
+
+      try {
+        screenStream = await navigator.mediaDevices.getDisplayMedia({
+          video: { frameRate: 30 },
+          audio: false
+        });
+        screenVideo.srcObject = screenStream;
+        videoSurface.classList.add("is-live");
+        videoState.textContent = "视频状态：正在共享本地屏幕";
+
+        const [track] = screenStream.getVideoTracks();
+        if (track) {
+          track.addEventListener("ended", () => {
+            clearScreenShare("视频状态：屏幕共享已停止");
+          });
         }
-        addNextTranscript();
-        transcriptTimer = setInterval(addNextTranscript, 900);
+        return true;
+      } catch (error) {
+        videoSurface.classList.remove("is-live");
+        screenVideo.srcObject = null;
+        videoState.textContent = "视频状态：未授权屏幕共享";
+        return false;
       }
+    }
 
-      minutesBtn.addEventListener("click", renderMinutes);
-      saveBtn.addEventListener("click", saveCurrentMinutes);
-      queryBtn.addEventListener("click", queryHistory);
+    function clearScreenShare(statusText) {
+      if (screenStream) {
+        screenStream.getTracks().forEach((track) => track.stop());
+      }
+      screenStream = null;
+      screenVideo.srcObject = null;
+      videoSurface.classList.remove("is-live");
+      videoState.textContent = statusText;
+    }
 
+    async function startMeeting() {
+      saveConfig();
+      meetingId = `mtg_${Date.now()}`;
+      meetingStartedAt = Date.now();
+      transcript = [];
+      currentMinutesMarkdown = "";
+      minutesGenerated = false;
       renderTranscript();
-      renderHistory();
-    })();
+      minutesContent.innerHTML = '<div class="empty-state">生成纪要后，这里会展示摘要、结论、待办和风险。</div>';
+      minutesState.textContent = "未生成";
+      saveBtn.disabled = true;
+      saveBtn.textContent = "保存到知识库";
+
+      meetingActive = true;
+      setBadge(meetingStatus, "状态：记录中", "status-live");
+      videoState.textContent = "视频状态：请求屏幕共享中";
+      startBtn.textContent = "停止会议";
+
+      await startScreenShare();
+      try {
+        await startBailianAsr();
+      } catch (error) {
+        meetingActive = false;
+        setBadge(meetingStatus, "状态：ASR 未启动", "status-idle");
+        startBtn.textContent = "开始会议";
+        queryAnswer.textContent = `麦克风转写启动失败：${error.message}`;
+      }
+    }
+
+    async function stopMeeting() {
+      meetingActive = false;
+      await stopBailianAsr();
+      clearScreenShare("视频状态：会议已停止");
+      setBadge(meetingStatus, "状态：已结束", "status-idle");
+      startBtn.textContent = "重新开始会议";
+      minutesBtn.disabled = transcript.length === 0;
+    }
+
+    startBtn.addEventListener("click", async () => {
+      if (meetingActive) {
+        await stopMeeting();
+        return;
+      }
+      await startMeeting();
+    });
+
+    minutesBtn.addEventListener("click", generateMinutes);
+    saveBtn.addEventListener("click", saveCurrentMinutes);
+    queryBtn.addEventListener("click", queryHistory);
+    saveConfigBtn.addEventListener("click", saveConfig);
+    [cozeBaseUrl, cozePat, cozeBotId, wfReceiveTranscript, wfGenerateMinutes, wfSaveMinutes, wfSearchMinutes, meetingTitleInput]
+      .forEach((input) => input.addEventListener("input", setCozeStatus));
+
+    loadConfig();
+    renderTranscript();
+    renderHistory();
   </script>
 </div>
 </body>
