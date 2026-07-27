@@ -655,7 +655,7 @@
         </div>
         <div class="field">
           <label for="cozePat">Personal Access Token</label>
-          <input id="cozePat" type="password" placeholder="来自 config.local.js" autocomplete="off">
+          <input id="cozePat" type="password" placeholder="来自 config.js" autocomplete="off">
         </div>
         <div class="field">
           <label for="cozeBotId">Bot ID（可选）</label>
@@ -684,7 +684,7 @@
       </div>
       <div class="config-actions">
         <button id="saveConfigBtn" type="button">应用当前填写值</button>
-        <span class="config-note">默认读取 config.local.js；密钥会暴露在浏览器，仅适合本地演示。</span>
+        <span class="config-note">默认读取 config.js；密钥会暴露在浏览器，仅适合本地演示。</span>
       </div>
     </section>
 
@@ -752,7 +752,7 @@
 
   </main>
 
-  <script src="config.local.js"></script>
+  <script src="config.js"></script>
   <script type="module">
     const WORKFLOW_ENDPOINT = "/v1/workflow/run";
     const DEFAULT_CONFIG = window.MEETING_HOST_CONFIG || {};
@@ -769,8 +769,8 @@
     let meetingActive = false;
     let screenStream = null;
     let micStream = null;
-    let asrLoopActive = false;
-    let audioDecodeContext = null;
+    let speechRecognition = null;
+    let browserSpeechActive = false;
     let meetingId = "";
     let meetingStartedAt = 0;
     let currentMinutesMarkdown = "";
@@ -829,15 +829,7 @@
         generateMinutesWorkflowId: wfGenerateMinutes.value.trim(),
         saveMinutesWorkflowId: wfSaveMinutes.value.trim(),
         searchMinutesWorkflowId: wfSearchMinutes.value.trim(),
-        meetingTitle: meetingTitleInput.value.trim() || "产品最小功能验证会议",
-        aliyunBailian: {
-          apiKey: DEFAULT_CONFIG.aliyunBailian?.apiKey || "",
-          endpoint: DEFAULT_CONFIG.aliyunBailian?.endpoint || "https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation",
-          model: DEFAULT_CONFIG.aliyunBailian?.model || "fun-asr-flash-2026-06-15",
-          format: DEFAULT_CONFIG.aliyunBailian?.format || "wav",
-          sampleRate: Number(DEFAULT_CONFIG.aliyunBailian?.sampleRate || 16000),
-          chunkMs: Number(DEFAULT_CONFIG.aliyunBailian?.chunkMs || 5000)
-        }
+        meetingTitle: meetingTitleInput.value.trim() || "产品最小功能验证会议"
       };
     }
 
@@ -1013,208 +1005,74 @@
       minutesBtn.disabled = false;
     }
 
-    function pickRecorderMimeType() {
-      const candidates = [
-        "audio/webm;codecs=opus",
-        "audio/webm",
-        "audio/ogg;codecs=opus",
-        "audio/mp4"
-      ];
-      return candidates.find((type) => MediaRecorder.isTypeSupported(type)) || "";
-    }
+    function startBrowserSpeechRecognition() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        return false;
+      }
 
-    function recordOneAudioChunk(stream, chunkMs) {
-      return new Promise((resolve, reject) => {
-        const mimeType = pickRecorderMimeType();
-        const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
-        const chunks = [];
-        const stopTimer = window.setTimeout(() => {
-          if (recorder.state !== "inactive") {
-            recorder.stop();
+      speechRecognition = new SpeechRecognition();
+      speechRecognition.lang = "zh-CN";
+      speechRecognition.continuous = true;
+      speechRecognition.interimResults = false;
+      speechRecognition.maxAlternatives = 1;
+
+      speechRecognition.addEventListener("result", async (event) => {
+        let finalText = "";
+        for (let index = event.resultIndex; index < event.results.length; index += 1) {
+          const result = event.results[index];
+          if (result.isFinal && result[0]?.transcript) {
+            finalText += result[0].transcript;
           }
-        }, chunkMs);
-
-        recorder.addEventListener("dataavailable", (event) => {
-          if (event.data && event.data.size > 0) {
-            chunks.push(event.data);
-          }
-        });
-        recorder.addEventListener("error", () => {
-          window.clearTimeout(stopTimer);
-          reject(new Error("浏览器录音失败。"));
-        });
-        recorder.addEventListener("stop", () => {
-          window.clearTimeout(stopTimer);
-          resolve(new Blob(chunks, { type: recorder.mimeType || "audio/webm" }));
-        });
-        recorder.start();
-      });
-    }
-
-    function resampleChannel(channelData, sourceRate, targetRate) {
-      if (sourceRate === targetRate) {
-        return channelData;
-      }
-      const ratio = sourceRate / targetRate;
-      const targetLength = Math.round(channelData.length / ratio);
-      const result = new Float32Array(targetLength);
-      for (let i = 0; i < targetLength; i += 1) {
-        const sourceIndex = i * ratio;
-        const before = Math.floor(sourceIndex);
-        const after = Math.min(before + 1, channelData.length - 1);
-        const weight = sourceIndex - before;
-        result[i] = channelData[before] * (1 - weight) + channelData[after] * weight;
-      }
-      return result;
-    }
-
-    function floatTo16BitPcm(view, offset, input) {
-      for (let i = 0; i < input.length; i += 1, offset += 2) {
-        const sample = Math.max(-1, Math.min(1, input[i]));
-        view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7fff, true);
-      }
-    }
-
-    function writeString(view, offset, value) {
-      for (let i = 0; i < value.length; i += 1) {
-        view.setUint8(offset + i, value.charCodeAt(i));
-      }
-    }
-
-    function encodeWav(samples, sampleRate) {
-      const buffer = new ArrayBuffer(44 + samples.length * 2);
-      const view = new DataView(buffer);
-      writeString(view, 0, "RIFF");
-      view.setUint32(4, 36 + samples.length * 2, true);
-      writeString(view, 8, "WAVE");
-      writeString(view, 12, "fmt ");
-      view.setUint32(16, 16, true);
-      view.setUint16(20, 1, true);
-      view.setUint16(22, 1, true);
-      view.setUint32(24, sampleRate, true);
-      view.setUint32(28, sampleRate * 2, true);
-      view.setUint16(32, 2, true);
-      view.setUint16(34, 16, true);
-      writeString(view, 36, "data");
-      view.setUint32(40, samples.length * 2, true);
-      floatTo16BitPcm(view, 44, samples);
-      return new Blob([view], { type: "audio/wav" });
-    }
-
-    function blobToBase64(blob) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(String(reader.result).split(",")[1] || "");
-        reader.onerror = () => reject(new Error("音频编码失败。"));
-        reader.readAsDataURL(blob);
-      });
-    }
-
-    async function audioBlobToWavDataUri(blob, sampleRate) {
-      const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
-      audioDecodeContext = audioDecodeContext || new AudioContextCtor();
-      const arrayBuffer = await blob.arrayBuffer();
-      const decoded = await audioDecodeContext.decodeAudioData(arrayBuffer);
-      const mono = decoded.numberOfChannels > 1
-        ? decoded.getChannelData(0).map((sample, index) => {
-            let sum = sample;
-            for (let channel = 1; channel < decoded.numberOfChannels; channel += 1) {
-              sum += decoded.getChannelData(channel)[index];
-            }
-            return sum / decoded.numberOfChannels;
-          })
-        : decoded.getChannelData(0);
-      const resampled = resampleChannel(mono, decoded.sampleRate, sampleRate);
-      const wavBlob = encodeWav(resampled, sampleRate);
-      const base64 = await blobToBase64(wavBlob);
-      return `data:audio/wav;base64,${base64}`;
-    }
-
-    function extractAsrText(payload) {
-      const output = payload?.output || payload;
-      const choices = output?.choices || payload?.choices;
-      const content = choices?.[0]?.message?.content || output?.message?.content || output?.content;
-      if (Array.isArray(content)) {
-        const textItem = content.find((item) => typeof item?.text === "string" || typeof item?.transcription === "string");
-        if (textItem) {
-          return textItem.text || textItem.transcription;
         }
-      }
-      if (typeof content === "string") {
-        return content;
-      }
-      return output?.text || output?.transcription || output?.sentence?.text || output?.result?.text || "";
-    }
-
-    async function callBailianAsr(audioBlob) {
-      const config = getConfig();
-      const asr = config.aliyunBailian;
-      if (!asr.apiKey) {
-        throw new Error("请先在 config.local.js 中配置阿里云百炼 API Key。");
-      }
-      const dataUri = await audioBlobToWavDataUri(audioBlob, asr.sampleRate);
-      const response = await fetch(asr.endpoint, {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${asr.apiKey}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          model: asr.model,
-          input: {
-            messages: [
-              {
-                role: "user",
-                content: [
-                  {
-                    type: "input_audio",
-                    input_audio: {
-                      data: dataUri,
-                      format: asr.format
-                    }
-                  }
-                ]
-              }
-            ]
-          },
-          parameters: {
-            format: asr.format,
-            sample_rate: asr.sampleRate
-          }
-        })
+        if (finalText.trim()) {
+          await appendTranscriptChunk(finalText);
+        }
       });
 
-      if (!response.ok) {
-        throw new Error(`百炼 ASR 请求失败：HTTP ${response.status}`);
-      }
-      const payload = await response.json();
-      if (payload.code && payload.code !== "Success") {
-        throw new Error(payload.message || payload.msg || "百炼 ASR 识别失败。");
-      }
-      return extractAsrText(payload);
-    }
-
-    async function runAsrLoop() {
-      const config = getConfig();
-      asrLoopActive = true;
-      while (asrLoopActive && micStream) {
-        try {
-          const chunk = await recordOneAudioChunk(micStream, config.aliyunBailian.chunkMs);
-          if (!asrLoopActive || chunk.size === 0) {
-            continue;
-          }
-          const text = await callBailianAsr(chunk);
-          if (text.trim()) {
-            await appendTranscriptChunk(text);
-          }
-        } catch (error) {
-          queryAnswer.textContent = `百炼 ASR 失败：${error.message}`;
-          await new Promise((resolve) => window.setTimeout(resolve, 1500));
+      speechRecognition.addEventListener("error", (event) => {
+        if (meetingActive) {
+          queryAnswer.textContent = `浏览器语音识别提示：${event.error || "识别中断"}。`;
         }
+      });
+
+      speechRecognition.addEventListener("end", () => {
+        if (meetingActive && speechRecognition) {
+          try {
+            speechRecognition.start();
+          } catch (error) {
+            // Some browsers throw if start is called too quickly after end.
+          }
+        }
+      });
+
+      try {
+        speechRecognition.start();
+        browserSpeechActive = true;
+        return true;
+      } catch (error) {
+        speechRecognition = null;
+        browserSpeechActive = false;
+        return false;
       }
     }
 
-    async function startBailianAsr() {
+    function stopBrowserSpeechRecognition() {
+      if (!speechRecognition) {
+        return;
+      }
+      const recognition = speechRecognition;
+      speechRecognition = null;
+      browserSpeechActive = false;
+      recognition.onend = null;
+      try {
+        recognition.stop();
+      } catch (error) {
+        // Already stopped.
+      }
+    }
+
+    async function startBrowserAsr() {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         throw new Error("当前浏览器不支持麦克风采集。");
       }
@@ -1225,12 +1083,14 @@
           noiseSuppression: true
         }
       });
-      queryAnswer.textContent = "麦克风已接入阿里云百炼 ASR。页面会每 5 秒识别一次并追加到转写区。";
-      runAsrLoop();
+      const browserAsrStarted = startBrowserSpeechRecognition();
+      queryAnswer.textContent = browserAsrStarted
+        ? "麦克风已接入。浏览器语音识别会把文本追加到转写区。"
+        : "麦克风已接入，但当前浏览器不支持 Web Speech API 语音识别。";
     }
 
-    async function stopBailianAsr() {
-      asrLoopActive = false;
+    async function stopBrowserAsr() {
+      stopBrowserSpeechRecognition();
       if (micStream) {
         micStream.getTracks().forEach((track) => track.stop());
       }
@@ -1380,7 +1240,7 @@
 
       await startScreenShare();
       try {
-        await startBailianAsr();
+        await startBrowserAsr();
       } catch (error) {
         meetingActive = false;
         setBadge(meetingStatus, "状态：ASR 未启动", "status-idle");
@@ -1391,7 +1251,7 @@
 
     async function stopMeeting() {
       meetingActive = false;
-      await stopBailianAsr();
+      await stopBrowserAsr();
       clearScreenShare("视频状态：会议已停止");
       setBadge(meetingStatus, "状态：已结束", "status-idle");
       startBtn.textContent = "重新开始会议";
