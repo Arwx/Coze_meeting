@@ -77,10 +77,15 @@ test("loads meeting history through the configured list workflow", () => {
   assert.doesNotMatch(queryPanel, /id="historyList"/);
 });
 
-test("history item titles come from the workflow title field", () => {
-  assert.match(html, /const title = pickFirstString\(parsed, \["title"\]/);
+test("history item titles support workflow and table title fields", () => {
+  assert.match(html, /"outputList"/);
+  assert.match(html, /function deriveHistoryTitle/);
+  assert.match(html, /pickFirstString\(data,\s*\[\s*"title",\s*"meeting_title",\s*"meetingTitle",\s*"fileName",\s*"file_name",\s*"document_name",\s*"name"\s*\]/);
+  assert.match(html, /pickTitleFromMinutesText/);
+  assert.match(html, /function isPlaceholderHistoryTitle/);
+  assert.match(html, /!isPlaceholderHistoryTitle\(cleanTitle\)/);
   assert.doesNotMatch(html, /title: `历史会议纪要 \$\{index \+ 1\}`/);
-  assert.doesNotMatch(html, /pickFirstString\(parsed, \["title", "meeting_title"/);
+  assert.doesNotMatch(html, /title:\s*"未命名会议纪要"/);
 });
 
 test("keeps the query answer box empty until a query is answered", () => {

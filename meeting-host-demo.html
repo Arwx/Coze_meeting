@@ -1032,7 +1032,7 @@
       if (!data || typeof data !== "object") {
         return [];
       }
-      for (const key of ["items", "list", "records", "histories", "minutes", "documents", "data", "output", "result"]) {
+      for (const key of ["outputList", "items", "list", "records", "rows", "histories", "minutes", "documents", "data", "output", "result"]) {
         const nested = parseMaybeJson(data[key]);
         if (Array.isArray(nested)) {
           return nested;
@@ -1050,22 +1050,58 @@
       return [];
     }
 
+    function stripMeetingMinutesSuffix(value) {
+      return String(value || "")
+        .replace(/\.txt$/i, "")
+        .replace(/^\d{4}-\d{2}-\d{2}[_\s-]*/, "")
+        .replace(/[_\s-]*会议纪要$/, "")
+        .replace(/_/g, " ")
+        .trim();
+    }
+
+    function pickTitleFromMinutesText(value) {
+      const text = String(value || "");
+      const titleLine = text.match(/会议(?:标题|主题)[:：]\s*([^\n\r]+)/);
+      if (titleLine?.[1]?.trim()) {
+        return stripMeetingMinutesSuffix(titleLine[1]);
+      }
+      const heading = text.match(/^#\s+(.+)$/m);
+      if (heading?.[1]?.trim()) {
+        return stripMeetingMinutesSuffix(heading[1]);
+      }
+      return "";
+    }
+
+    function isPlaceholderHistoryTitle(value) {
+      return /^(未命名会议纪要|未命名会议|历史会议摘要|会议纪要)$/i.test(String(value || "").trim());
+    }
+
+    function deriveHistoryTitle(data, index) {
+      const explicitTitle = pickFirstString(data, ["title", "meeting_title", "meetingTitle", "fileName", "file_name", "document_name", "name"]);
+      const cleanTitle = stripMeetingMinutesSuffix(explicitTitle);
+      if (cleanTitle && !isPlaceholderHistoryTitle(cleanTitle)) {
+        return cleanTitle;
+      }
+      const textTitle = pickTitleFromMinutesText(pickFirstString(data, ["meeting_text", "minutes_md", "minutes", "content", "markdown", "detail", "text", "raw_text", "output"]));
+      return textTitle || `会议纪要 ${index + 1}`;
+    }
+
     function normalizeHistoryItem(item, index) {
       const parsed = parseMaybeJson(item);
       if (typeof parsed === "string") {
         return {
           id: `history_${index}_${Date.now()}`,
-          title: "未命名会议纪要",
+          title: deriveHistoryTitle({ text: parsed }, index),
           summary: parsed.slice(0, 90),
           minutes: parsed
         };
       }
 
-      const title = pickFirstString(parsed, ["title"]) || "未命名会议纪要";
-      const minutes = pickFirstString(parsed, ["minutes_md", "minutes", "content", "markdown", "detail", "text", "raw_text", "output"]);
+      const title = deriveHistoryTitle(parsed, index);
+      const minutes = pickFirstString(parsed, ["meeting_text", "minutes_md", "minutes", "content", "markdown", "detail", "text", "raw_text", "output"]);
       const summary = pickFirstString(parsed, ["summary", "abstract", "description", "snippet"], minutes ? minutes.slice(0, 90) : "点击查看会议纪要内容。");
       return {
-        id: pickFirstString(parsed, ["id", "document_id", "knowledge_document_id"], `history_${index}_${Date.now()}`),
+        id: pickFirstString(parsed, ["id", "row_id", "document_id", "knowledge_document_id"], `history_${index}_${Date.now()}`),
         title,
         summary,
         minutes: minutes || summary
