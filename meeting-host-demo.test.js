@@ -38,7 +38,8 @@ test("starts ASR through Coze transcription without repeated browser mic prompts
 });
 
 test("surfaces Coze ASR lifecycle and no-transcript diagnostics", () => {
-  assert.match(html, /const COZE_SDK_VERSION = "1\.3\.9"/);
+  assert.match(config, /sdkVersion:\s*"1\.3\.9"/);
+  assert.doesNotMatch(html, /const COZE_SDK_VERSION/);
   assert.match(html, /function setAsrStatus/);
   assert.match(html, /function scheduleAsrNoTranscriptHint/);
   assert.match(html, /WebsocketsEventType\.ALL/);
@@ -94,7 +95,8 @@ test("keeps the query answer box empty until a query is answered", () => {
 });
 
 test("saves generated minutes as a txt file input for the save workflow", () => {
-  assert.match(html, /const FILE_UPLOAD_ENDPOINT = "\/v1\/files\/upload"/);
+  assert.match(config, /fileUpload:\s*"\/v1\/files\/upload"/);
+  assert.doesNotMatch(html, /const FILE_UPLOAD_ENDPOINT/);
   assert.match(html, /function buildMeetingMinutesText/);
   assert.match(html, /async function uploadCozeTextFile/);
   assert.match(html, /new FormData\(\)/);
@@ -114,4 +116,21 @@ test("top actions and lower panels use the repaired layout classes", () => {
   assert.match(html, /class="action-buttons"/);
   assert.match(html, /grid-template-rows:\s*clamp\(380px,\s*28vw,\s*460px\)\s*minmax\(420px,\s*1fr\)/);
   assert.match(html, /\.answer\s*{[\s\S]*?min-height:\s*180px/);
+});
+
+test("renders minutes markdown as structured content instead of a raw pre block", () => {
+  assert.match(html, /function renderMarkdown/);
+  assert.match(html, /markdown-heading markdown-heading-/);
+  assert.match(html, /markdown-list/);
+  assert.match(html, /markdown-paragraph/);
+  assert.doesNotMatch(html, /<pre class="markdown-output">/);
+});
+
+test("keeps Coze endpoints and SDK source in runtime config", () => {
+  assert.match(config, /workflow:\s*"\/v1\/workflow\/run"/);
+  assert.match(config, /fileUpload:\s*"\/v1\/files\/upload"/);
+  assert.match(config, /sdkBaseUrl:\s*"https:\/\/esm\.sh\/@coze\/api"/);
+  assert.match(config, /sdkVersion:\s*"1\.3\.9"/);
+  assert.doesNotMatch(html, /const WORKFLOW_ENDPOINT/);
+  assert.doesNotMatch(html, /https:\/\/esm\.sh\/@coze\/api@/);
 });

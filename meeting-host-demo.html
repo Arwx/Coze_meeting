@@ -511,12 +511,99 @@
     }
 
     .markdown-output {
+      display: grid;
+      gap: 12px;
       margin: 0;
       color: var(--ink);
       font-family: "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
       font-size: 14px;
-      line-height: 1.75;
-      white-space: pre-wrap;
+      line-height: 1.74;
+      text-align: left;
+    }
+
+    .markdown-output > * {
+      margin: 0;
+    }
+
+    .markdown-heading {
+      color: #0f172a;
+      font-weight: 700;
+      line-height: 1.35;
+    }
+
+    .markdown-heading-1 {
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--line);
+      font-size: 20px;
+    }
+
+    .markdown-heading-2 {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-top: 4px;
+      font-size: 16px;
+    }
+
+    .markdown-heading-2::before {
+      content: "";
+      width: 4px;
+      height: 16px;
+      border-radius: 999px;
+      background: var(--primary);
+      flex: 0 0 auto;
+    }
+
+    .markdown-heading-3,
+    .markdown-heading-4,
+    .markdown-heading-5,
+    .markdown-heading-6 {
+      color: #263548;
+      font-size: 15px;
+    }
+
+    .markdown-paragraph {
+      color: #253246;
+    }
+
+    .markdown-list {
+      display: grid;
+      gap: 7px;
+      padding-left: 22px;
+      color: #253246;
+    }
+
+    .markdown-list li::marker {
+      color: var(--primary);
+      font-weight: 700;
+    }
+
+    .markdown-quote {
+      padding: 9px 12px;
+      border-left: 3px solid var(--accent);
+      border-radius: 8px;
+      background: var(--accent-weak);
+      color: #21413d;
+    }
+
+    .markdown-rule {
+      width: 100%;
+      height: 1px;
+      border: 0;
+      background: var(--line);
+    }
+
+    .markdown-output code {
+      padding: 2px 5px;
+      border-radius: 6px;
+      background: #eef2f7;
+      color: #0f172a;
+      font-family: Consolas, "SFMono-Regular", monospace;
+      font-size: 0.92em;
+    }
+
+    .markdown-output strong {
+      color: #0f172a;
     }
 
     .history-list {
@@ -783,11 +870,6 @@
   <script src="config.local.js"></script>
   <script type="module">
     const DEFAULT_MEETING_TITLE = "会议助手演示";
-    const WORKFLOW_ENDPOINT = "/v1/workflow/run";
-    const FILE_UPLOAD_ENDPOINT = "/v1/files/upload";
-    const COZE_SDK_VERSION = "1.3.9";
-    const COZE_SDK_CORE_URL = `https://esm.sh/@coze/api@${COZE_SDK_VERSION}`;
-    const COZE_SDK_WS_TOOLS_URL = `https://esm.sh/@coze/api@${COZE_SDK_VERSION}/ws-tools`;
     const DEFAULT_CONFIG = window.MEETING_HOST_CONFIG || {};
 
     const history = [];
@@ -843,23 +925,31 @@
     }
 
     function normalizeBaseUrl(value) {
-      return String(value || "https://api.coze.cn").replace(/\/+$/, "");
+      return String(value || "").replace(/\/+$/, "");
     }
 
-    function resolveCozeBaseWsUrl(baseUrl, configuredBaseWsUrl) {
-      if (configuredBaseWsUrl) {
-        return String(configuredBaseWsUrl).replace(/\/+$/, "");
+    function normalizePath(value) {
+      const path = String(value || "").trim();
+      if (!path) {
+        return "";
       }
-      return baseUrl.includes("coze.cn") ? "wss://ws.coze.cn" : "wss://ws.coze.com";
+      return path.startsWith("/") ? path : `/${path}`;
     }
 
     function getConfig() {
       const coze = DEFAULT_CONFIG.coze || {};
       const workflows = coze.workflows || {};
+      const endpoints = coze.endpoints || {};
       const baseUrl = normalizeBaseUrl(coze.baseUrl);
+      const sdkBaseUrl = normalizeBaseUrl(coze.sdkBaseUrl);
+      const sdkVersion = String(coze.sdkVersion || "").trim();
       return {
         baseUrl,
-        baseWsUrl: resolveCozeBaseWsUrl(baseUrl, coze.baseWsUrl),
+        baseWsUrl: normalizeBaseUrl(coze.baseWsUrl),
+        workflowEndpoint: normalizePath(endpoints.workflow),
+        fileUploadEndpoint: normalizePath(endpoints.fileUpload),
+        cozeSdkCoreUrl: sdkBaseUrl && sdkVersion ? `${sdkBaseUrl}@${sdkVersion}` : "",
+        cozeSdkWsToolsUrl: sdkBaseUrl && sdkVersion ? `${sdkBaseUrl}@${sdkVersion}/ws-tools` : "",
         pat: String(coze.pat || "").trim(),
         botId: String(coze.botId || "").trim(),
         receiveTranscriptWorkflowId: String(workflows.receiveTranscript || "").trim(),
@@ -963,8 +1053,84 @@
       historyModal.setAttribute("aria-hidden", "false");
     }
 
+    function renderInlineMarkdown(value) {
+      let html = escapeHtml(value);
+      html = html.replace(/`([^`]+)`/g, "<code>$1</code>");
+      html = html.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+      html = html.replace(/__([^_]+)__/g, "<strong>$1</strong>");
+      return html;
+    }
+
+    function flushMarkdownList(parts, listState) {
+      if (!listState.type) {
+        return;
+      }
+      parts.push(`</${listState.type}>`);
+      listState.type = "";
+    }
+
     function renderMarkdown(markdown) {
-      return `<pre class="markdown-output">${escapeHtml(markdown)}</pre>`;
+      const lines = String(markdown || "").replace(/\r\n/g, "\n").split("\n");
+      const parts = ['<article class="markdown-output">'];
+      const listState = { type: "" };
+
+      for (const rawLine of lines) {
+        const line = rawLine.trim();
+        if (!line) {
+          flushMarkdownList(parts, listState);
+          continue;
+        }
+
+        const headingMatch = line.match(/^(#{1,6})\s+(.+)$/);
+        if (headingMatch) {
+          flushMarkdownList(parts, listState);
+          const level = headingMatch[1].length;
+          parts.push(`<h${level} class="markdown-heading markdown-heading-${level}">${renderInlineMarkdown(headingMatch[2])}</h${level}>`);
+          continue;
+        }
+
+        if (/^([-*_])\1{2,}$/.test(line)) {
+          flushMarkdownList(parts, listState);
+          parts.push('<hr class="markdown-rule">');
+          continue;
+        }
+
+        const unorderedMatch = line.match(/^[-*+]\s+(.+)$/);
+        if (unorderedMatch) {
+          if (listState.type !== "ul") {
+            flushMarkdownList(parts, listState);
+            parts.push('<ul class="markdown-list">');
+            listState.type = "ul";
+          }
+          parts.push(`<li>${renderInlineMarkdown(unorderedMatch[1])}</li>`);
+          continue;
+        }
+
+        const orderedMatch = line.match(/^\d+[.)]\s+(.+)$/);
+        if (orderedMatch) {
+          if (listState.type !== "ol") {
+            flushMarkdownList(parts, listState);
+            parts.push('<ol class="markdown-list">');
+            listState.type = "ol";
+          }
+          parts.push(`<li>${renderInlineMarkdown(orderedMatch[1])}</li>`);
+          continue;
+        }
+
+        const quoteMatch = line.match(/^>\s?(.+)$/);
+        if (quoteMatch) {
+          flushMarkdownList(parts, listState);
+          parts.push(`<blockquote class="markdown-quote">${renderInlineMarkdown(quoteMatch[1])}</blockquote>`);
+          continue;
+        }
+
+        flushMarkdownList(parts, listState);
+        parts.push(`<p class="markdown-paragraph">${renderInlineMarkdown(line)}</p>`);
+      }
+
+      flushMarkdownList(parts, listState);
+      parts.push("</article>");
+      return parts.join("");
     }
 
     function formatClock(ms) {
@@ -1138,8 +1304,11 @@
       if (!workflowId) {
         throw new Error("请先填写对应的 Coze 工作流 ID。");
       }
+      if (!config.baseUrl || !config.workflowEndpoint) {
+        throw new Error("请先在 config.js 填写 Coze API 地址和工作流端点。");
+      }
 
-      const response = await fetch(`${config.baseUrl}${WORKFLOW_ENDPOINT}`, {
+      const response = await fetch(`${config.baseUrl}${config.workflowEndpoint}`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${config.pat}`,
@@ -1196,12 +1365,15 @@
       if (!config.pat) {
         throw new Error("请先填写 Coze Personal Access Token。");
       }
+      if (!config.baseUrl || !config.fileUploadEndpoint) {
+        throw new Error("请先在 config.js 填写 Coze API 地址和文件上传端点。");
+      }
 
       const fileBlob = new Blob([text], { type: "text/plain;charset=utf-8" });
       const formData = new FormData();
       formData.append("file", fileBlob, fileName);
 
-      const response = await fetch(`${config.baseUrl}${FILE_UPLOAD_ENDPOINT}`, {
+      const response = await fetch(`${config.baseUrl}${config.fileUploadEndpoint}`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${config.pat}`
@@ -1322,9 +1494,13 @@
     }
 
     async function loadCozeTranscriptionSdk() {
+      const config = getConfig();
+      if (!config.cozeSdkCoreUrl || !config.cozeSdkWsToolsUrl) {
+        throw new Error("请先在 config.js 填写 Coze SDK 地址和版本。");
+      }
       const [coreModule, wsToolsModule] = await Promise.all([
-        import(COZE_SDK_CORE_URL),
-        import(COZE_SDK_WS_TOOLS_URL)
+        import(config.cozeSdkCoreUrl),
+        import(config.cozeSdkWsToolsUrl)
       ]);
       return {
         WebsocketsEventType: coreModule.WebsocketsEventType,
@@ -1340,6 +1516,9 @@
       const config = getConfig();
       if (!config.pat) {
         throw new Error("请先在 config.js 填写 Coze Personal Access Token。");
+      }
+      if (!config.baseWsUrl) {
+        throw new Error("请先在 config.js 填写 Coze WebSocket 地址。");
       }
 
       setAsrStatus("正在加载 Coze 实时转写 SDK...");
